@@ -6,6 +6,16 @@ import useAuth from "@/hooks/useAuth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Loader from "../Loader";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Menu, X, User, LogOut, Compass, Map, Home, Info, HelpCircle } from "lucide-react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 type TourStep = 0 | 1 | 2;
 
@@ -13,15 +23,11 @@ export default function Navbar() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-
- 
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState<TourStep>(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    
     const seen = window.localStorage.getItem("Tour Hobe_nav_tour_seen");
     if (!seen) {
       setShowTour(true);
@@ -36,257 +42,138 @@ export default function Navbar() {
     }
   };
 
-  const nextStep = () => {
-    setTourStep((prev) => {
-      if (prev === 2) {
-       
-        closeTour();
-        return prev;
-      }
-      return (prev + 1) as TourStep;
-    });
-  };
-
-  const prevStep = () => {
-    setTourStep((prev) => (prev === 0 ? prev : ((prev - 1) as TourStep)));
-  };
-
   const handleLogout = () => {
     logout();
     router.push("/");
   };
 
-  if (loading) {
-    return (
-     <Loader/>);
-  }
+  if (loading) return <Loader />;
 
+  const tourRing = "ring-2 ring-primary ring-offset-4 ring-offset-background animate-pulse";
+  const highlightExplore = showTour && tourStep === 0 ? tourRing : "";
+  const highlightPlans = showTour && tourStep === 1 ? tourRing : "";
+  const highlightAuth = showTour && tourStep === 2 ? tourRing : "";
 
-  const highlightExplore = showTour && tourStep === 0 ? "ring-2 ring-orange-400 ring-offset-2" : "";
-  const highlightPlans = showTour && tourStep === 1 ? "ring-2 ring-orange-400 ring-offset-2" : "";
-  const highlightAuth = showTour && tourStep === 2 ? "ring-2 ring-orange-400 ring-offset-2" : "";
+  const navLinks = [
+    { name: "Home", href: "/", icon: Home, highlight: highlightExplore },
+    { name: "Explore", href: "/explore", icon: Compass, highlight: highlightExplore },
+    { name: "All Plans", href: "/travel-plans", icon: Map, highlight: highlightPlans },
+    { name: "About", href: "/about", icon: Info, highlight: "" },
+    { name: "FAQ", href: "/faq", icon: HelpCircle, highlight: "" },
+  ];
 
   return (
-    <nav className="bg-gray-50 border-b border-gray-200 relative">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Left: Logo */}
-          <div className="flex items-center">
-            <Link
-              href="/"
-              className="text-primary font-extrabold text-xl sm:text-2xl tracking-tight"
-            >
-              Tour Hobe
-            </Link>
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="bg-primary p-1.5 rounded-lg">
+            <Compass className="w-6 h-6 text-primary-foreground" />
           </div>
+          <span className="text-xl font-bold tracking-tight">
+            TOUR<span className="text-primary">HOBE</span>
+          </span>
+        </Link>
 
-          {/* Desktop Links */}
-          <div className="hidden md:flex md:items-center md:space-x-4">
-            <Link
-              href="/"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${highlightExplore}`}
+        <div className="hidden lg:flex items-center gap-1">
+          {navLinks.map((link) => (
+            <Button
+              key={link.name}
+              variant="ghost"
+              asChild
+              className={`text-sm font-medium transition-all ${link.highlight}`}
             >
-              Home
-            </Link>
-           
-            <Link
-              href="/about"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${highlightExplore}`}
-            >
-              About
-            </Link>
-             <Link
-              href="/faq"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${highlightExplore}`}
-            >
-              FAQ
-            </Link>
-            <Link
-              href="/explore"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${highlightExplore}`}
-            >
-              Explore
-            </Link>
+              <Link href={link.href}>{link.name}</Link>
+            </Button>
+          ))}
+        </div>
 
-            <Link
-              href="/travel-plans"
-              className={`text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${highlightPlans}`}
-            >
-              All Plans
-            </Link>
-
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                <Link
-                  href="/user"
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  User Dashboard
-                </Link>
-
-                <Link
-                  href={`/profile`}
-                  className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Profile
-                </Link>
-
                 {user.role === "ADMIN" && (
-                  <Link
-                    href="/admin"
-                    className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Admin
-                  </Link>
+                  <Badge variant="secondary" className="font-mono">ADMIN</Badge>
                 )}
-
-                <button
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/profile" className="flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Profile
+                  </Link>
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm" 
                   onClick={handleLogout}
-                  className="ml-2 px-3 py-1 bg-primary hover:bg-primary text-white rounded-md text-sm font-medium transition"
+                  className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
+                  <LogOut className="w-4 h-4 mr-2" />
                   Logout
-                </button>
+                </Button>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className={`px-3 py-1 bg-primary hover:bg-primary text-white rounded-md text-sm font-medium ${highlightAuth}`}
-                >
-                  Login
-                </Link>
-
-                <Link
-                  href="/register"
-                  className={`px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:border-primary hover:text-primary ${highlightAuth}`}
-                >
-                  Register
-                </Link>
+                <Button variant="ghost" size="sm" asChild className={highlightAuth}>
+                  <Link href="/login">Login</Link>
+                </Button>
+                <Button size="sm" asChild className={highlightAuth}>
+                  <Link href="/register">Join Now</Link>
+                </Button>
               </>
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setOpen((v) => !v)}
-              aria-label="Toggle menu"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-primary hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            >
-              {open ? (
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="lg:hidden">
+                <Menu className="h-6 w-6" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetHeader>
+                <SheetTitle className="text-left font-bold text-xl">Navigation</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col gap-4 mt-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-4 px-4 py-3 rounded-xl transition-colors hover:bg-muted ${link.highlight}`}
+                  >
+                    <link.icon className="w-5 h-5 text-muted-foreground" />
+                    <span className="font-medium text-lg">{link.name}</span>
+                  </Link>
+                ))}
+                
+                <div className="h-px bg-border my-2" />
+                
+                {user ? (
+                  <div className="space-y-3">
+                    <Link href="/profile" onClick={() => setOpen(false)} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-muted">
+                      <User className="w-5 h-5 text-muted-foreground" />
+                      <span className="font-medium text-lg">My Profile</span>
+                    </Link>
+                    <Button variant="destructive" className="w-full justify-start gap-4 px-4 h-12 rounded-xl" onClick={() => { handleLogout(); setOpen(false); }}>
+                      <LogOut className="w-5 h-5" />
+                      <span className="text-lg">Logout</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button variant="outline" asChild className="h-12 rounded-xl">
+                      <Link href="/login" onClick={() => setOpen(false)}>Login</Link>
+                    </Button>
+                    <Button asChild className="h-12 rounded-xl">
+                      <Link href="/register" onClick={() => setOpen(false)}>Register</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
-
-      {/* Mobile menu panel */}
-      {open && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="px-4 pt-4 pb-6 space-y-2">
-            <Link
-              href="/" 
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary ${highlightExplore}`}
-            >
-              Home
-            </Link>
-            <Link
-              href="/about" 
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary ${highlightExplore}`}
-            >
-              About
-            </Link>
-            <Link
-              href="/faq" 
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary ${highlightExplore}`}
-            >
-              FAQ 
-            </Link>
-            <Link
-              href="/explore" 
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary ${highlightExplore}`}
-            >
-              Explore
-            </Link>
-
-            <Link
-              href="/travel-plans"
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary ${highlightPlans}`}
-            >
-              All Plans
-            </Link>
-
-            {user ? (
-              <>
-                <Link
-                  href="/user"
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary"
-                >
-                  User Dashboard
-                </Link>
-
-                <Link
-                  href={`/profile`}
-                  onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary"
-                >
-                  Profile
-                </Link>
-
-                {user.role === "ADMIN" && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setOpen(false)}
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-primary"
-                  >
-                    Admin
-                  </Link>
-                )}
-
-                <button
-                  onClick={() => { setOpen(false); handleLogout(); }}
-                  className="w-full text-left px-3 py-2 bg-primary hover:bg-primary text-white rounded-md text-base font-medium"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setOpen(false)}
-                  className={`block px-3 py-2 bg-primary hover:bg-primary text-white rounded-md text-base font-medium ${highlightAuth}`}
-                >
-                  Login
-                </Link>
-
-                <Link
-                  href="/register"
-                  onClick={() => setOpen(false)}
-                  className={`block px-3 py-2 border border-gray-200 rounded-md text-base font-medium text-gray-700 hover:border-primary hover:text-primary ${highlightAuth}`}
-                >
-                  Register
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-
     </nav>
   );
 }

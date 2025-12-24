@@ -1,108 +1,94 @@
 "use client";
 
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-50 border-t border-gray-200">
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid gap-10 md:grid-cols-3">
-  
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">
-              Travel<span className="text-primary">Planner</span>
+    <footer className="w-full bg-background border-t">
+      <div className="container mx-auto px-6 py-12">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
+          
+          <div className="flex flex-col gap-4">
+            <h2 className="text-2xl font-bold tracking-tighter">
+              TOUR<span className="text-primary">HOBE</span>
             </h2>
-            <p className="mt-3 text-sm text-gray-600 leading-relaxed">
-              Find travel buddies, create smart plans, and explore the world
-              together. Built for travelers who believe journeys are better
-              when shared.
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              The ultimate platform for modern explorers. Discover companion-led 
+              journeys, share costs, and create memories that last a lifetime.
             </p>
           </div>
 
-    
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">
-              Explore
-            </h3>
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li>
-                <Link
-                  href="/travel-plans"
-                  className="hover:text-primary transition"
-                >
-                  Travel Plans
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/explore"
-                  className="hover:text-primary transition"
-                >
-                  Find Travel Buddies
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/login"
-                  className="hover:text-primary transition"
-                >
-                  Login
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/register"
-                  className="hover:text-primary transition"
-                >
-                  Create an Account
-                </Link>
-              </li>
-            </ul>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider">Platform</h3>
+            <nav className="flex flex-col gap-2">
+              <Link href="/travel-plans" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Available Trips
+              </Link>
+              <Link href="/explore" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Find Companions
+              </Link>
+              <Link href="/community" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Travel Community
+              </Link>
+              <Link href="/guide" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                How it Works
+              </Link>
+            </nav>
           </div>
 
-    
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">
-              Travel Highlights
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <p className="text-xs text-gray-500">Active plans</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">
-                  120+
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <p className="text-xs text-gray-500">Travel buddies</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">
-                  800+
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <p className="text-xs text-gray-500">Countries</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">
-                  40+
-                </p>
-              </div>
-              <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-                <p className="text-xs text-gray-500">Trips completed</p>
-                <p className="mt-1 text-lg font-semibold text-gray-900">
-                  1.5k+
-                </p>
-              </div>
+          <div className="flex flex-col gap-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider">Support</h3>
+            <nav className="flex flex-col gap-2">
+              <Link href="/help" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Help Center
+              </Link>
+              <Link href="/safety" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Safety Trust
+              </Link>
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Terms of Service
+              </Link>
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                Privacy Policy
+              </Link>
+            </nav>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider">Platform Stats</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <Card className="bg-muted/50 border-none shadow-none">
+                <CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground">Explorers</p>
+                  <p className="text-lg font-bold">25k+</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-muted/50 border-none shadow-none">
+                <CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground">Destinations</p>
+                  <p className="text-lg font-bold">180+</p>
+                </CardContent>
+              </Card>
             </div>
           </div>
+
         </div>
       </div>
 
-  
-      <div className="border-t border-gray-200 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} Tour Hobe. All rights reserved.</p>
-          <p className="text-gray-400">
-            Made for travelers who love shared journeys.
+      <Separator />
+
+      <div className="container mx-auto px-6 py-6">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} Tour Hobe Inc. All rights reserved.
           </p>
+          <div className="flex items-center gap-6">
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Twitter</Link>
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Instagram</Link>
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">LinkedIn</Link>
+          </div>
         </div>
       </div>
     </footer>
