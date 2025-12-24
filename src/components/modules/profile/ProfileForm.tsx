@@ -8,6 +8,28 @@ import { UserAPI } from "@/lib/api";
 import { PhotoUpload } from "@/components/shared/PhotoUpload/PhotoUpload";
 import { updateUserSchema, UpdateUserType } from "@/zod/profile/profile.validator";
 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { 
+  User, 
+  MapPin, 
+  Camera, 
+  Globe, 
+  Map, 
+  FileText, 
+  Loader2, 
+  X,
+  Sparkles
+} from "lucide-react";
 
 type Props = {
   defaultValues?: any;
@@ -16,32 +38,25 @@ type Props = {
 };
 
 export default function ProfileForm({ defaultValues, onSuccess, onCancel }: Props) {
-  
-
-  const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm<any>({
+  const form = useForm<any>({
     defaultValues: {
       fullName: defaultValues?.fullName ?? "",
       bio: defaultValues?.bio ?? "",
-      
       profileImageFile: undefined,
       profileImage: defaultValues?.profileImage ?? "",
-      
       travelInterests:
-        Array.isArray(defaultValues?.travelInterests) && defaultValues.travelInterests.length > 0
+        Array.isArray(defaultValues?.travelInterests)
           ? defaultValues.travelInterests.join(", ")
           : defaultValues?.travelInterests ?? "",
       visitedCountries:
-        Array.isArray(defaultValues?.visitedCountries) && defaultValues.visitedCountries.length > 0
+        Array.isArray(defaultValues?.visitedCountries)
           ? defaultValues.visitedCountries.join(", ")
           : defaultValues?.visitedCountries ?? "",
       currentLocation: defaultValues?.currentLocation ?? "",
     },
   });
+
+  const { isSubmitting } = form.formState;
 
   async function onSubmit(raw: any) {
     if (!defaultValues?.id) {
@@ -52,7 +67,6 @@ export default function ProfileForm({ defaultValues, onSuccess, onCancel }: Prop
     const data: any = { ...raw };
     let profileImageUrl = defaultValues?.profileImage ?? "";
 
-   
     try {
       if (raw.profileImageFile && raw.profileImageFile.length > 0) {
         const file = raw.profileImageFile[0] as File;
@@ -60,177 +74,201 @@ export default function ProfileForm({ defaultValues, onSuccess, onCancel }: Prop
         profileImageUrl = resp?.data?.display_url || resp?.data?.url || resp?.display_url || resp?.url || profileImageUrl;
       }
     } catch (err: any) {
-      console.error("Image upload failed:", err);
-      Swal.fire("Error", err?.message || "Image upload failed", "error");
+      Swal.fire("Error", "Image upload failed", "error");
       return;
     }
 
-    
     data.profileImage = profileImageUrl;
     delete data.profileImageFile;
 
-    
+    // Transform comma strings to arrays
     if (typeof data.travelInterests === "string") {
-      data.travelInterests = data.travelInterests
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter(Boolean);
+      data.travelInterests = data.travelInterests.split(",").map((s: string) => s.trim()).filter(Boolean);
     }
-
     if (typeof data.visitedCountries === "string") {
-      data.visitedCountries = data.visitedCountries
-        .split(",")
-        .map((s: string) => s.trim())
-        .filter(Boolean);
+      data.visitedCountries = data.visitedCountries.split(",").map((s: string) => s.trim()).filter(Boolean);
     }
 
-    
     const parsed = updateUserSchema.safeParse(data);
 
     if (!parsed.success) {
-     
-      const zodError = parsed.error;
-     
-      zodError.issues.forEach((issue) => {
-        
-        const field = (issue.path && issue.path.length > 0 ? String(issue.path[0]) : "_error") as string;
-        
-        setError(field, { type: "manual", message: issue.message });
+      parsed.error.issues.forEach((issue) => {
+        const field = (issue.path && issue.path.length > 0 ? String(issue.path[0]) : "root") as any;
+        form.setError(field, { type: "manual", message: issue.message });
       });
-
-      
-      Swal.fire("Validation error", "Please correct the highlighted fields.", "error");
       return;
     }
 
-    const payload: UpdateUserType = parsed.data as UpdateUserType;
-
-   
     try {
-      const res = await UserAPI.updateProfile(defaultValues.id, payload);
-      const updated = res.data?.data || res.data?.user || res.data || payload;
-
-      Swal.fire({
-        title: "Saved",
-        text: "Profile updated successfully.",
-        icon: "success",
-        confirmButtonColor: "#f97316",
-      });
-
+      const res = await UserAPI.updateProfile(defaultValues.id, parsed.data as UpdateUserType);
+      const updated = res.data?.data || res.data?.user || res.data || (parsed.data as any);
       onSuccess(updated);
     } catch (err: any) {
-      console.error("Update failed:", err);
-      Swal.fire("Error", err?.response?.data?.message || err?.message || "Failed to update profile", "error");
+      Swal.fire("Error", "Failed to update profile", "error");
     }
   }
 
   return (
-    <div>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">Edit profile</h3>
-          <p className="text-sm text-gray-500 mt-1">Update your name, bio and other public info.</p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div className="space-y-1">
+          <h3 className="text-2xl font-black tracking-tight flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" /> Update Profile
+          </h3>
+          <p className="text-sm text-muted-foreground font-medium italic">
+            Refine your travel identity on Tour Hobe.
+          </p>
         </div>
-        <button className="text-gray-500" onClick={() => onCancel?.()}>
-          ✕
-        </button>
+        <Button variant="ghost" size="icon" className="rounded-full" onClick={onCancel}>
+          <X className="w-5 h-5" />
+        </Button>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Full name</label>
-          <input
-            {...register("fullName")}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-          />
-          {errors.fullName && <p className="text-xs text-red-500 mt-1">{String(errors.fullName.message)}</p>}
-        </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Full Name */}
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold flex items-center gap-2">
+                    <User className="w-4 h-4 text-primary" /> Full Name
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Md. Abu Jafor" className="h-12 rounded-xl" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Upload Profile image</label>
-         
-          <input
-            type="file"
-            accept="image/*"
-            {...register("profileImageFile" as const)}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-          />
-          {/* show schema-level error for profileImage (string url) */}
-          {errors.profileImage && <p className="text-xs text-red-500 mt-1">{String(errors.profileImage.message)}</p>}
-        </div>
+            {/* Current Location */}
+            <FormField
+              control={form.control}
+              name="currentLocation"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" /> Location
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Dhaka, Bangladesh" className="h-12 rounded-xl" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Current location</label>
-          <input
-            {...register("currentLocation")}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          {/* Profile Image */}
+          <FormField
+            control={form.control}
+            name="profileImageFile"
+            render={({ field: { value, onChange, ...fieldProps } }) => (
+              <FormItem>
+                <FormLabel className="font-bold flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-primary" /> Profile Photo
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    className="h-12 rounded-xl pt-2.5 cursor-pointer file:mr-4 file:bg-primary/10 file:text-primary file:border-0 file:rounded-lg file:font-bold file:px-3"
+                    onChange={(event) => onChange(event.target.files)}
+                    {...fieldProps}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.currentLocation && (
-            <p className="text-xs text-red-500 mt-1">{String(errors.currentLocation.message)}</p>
-          )}
-        </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Bio</label>
-          <textarea
-            {...register("bio")}
-            rows={4}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
+          {/* Bio */}
+          <FormField
+            control={form.control}
+            name="bio"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="font-bold flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-primary" /> Bio
+                </FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Tell the community about your travel vibe..." 
+                    className="rounded-2xl min-h-[100px] resize-none" 
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.bio && <p className="text-xs text-red-500 mt-1">{String(errors.bio.message)}</p>}
-        </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Travel interests (comma separated)</label>
-          <input
-            defaultValue={
-              Array.isArray(defaultValues?.travelInterests)
-                ? defaultValues.travelInterests.join(", ")
-                : defaultValues?.travelInterests ?? ""
-            }
-            {...register("travelInterests" as any)}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-            placeholder="hiking, photography"
-          />
-          {errors.travelInterests && (
-            <p className="text-xs text-red-500 mt-1">{String(errors.travelInterests.message)}</p>
-          )}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Travel Interests */}
+            <FormField
+              control={form.control}
+              name="travelInterests"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold flex items-center gap-2">
+                    <Map className="w-4 h-4 text-primary" /> Interests
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="hiking, camping, food" className="h-12 rounded-xl" {...field} />
+                  </FormControl>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Comma separated</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">Visited countries (comma separated)</label>
-          <input
-            defaultValue={
-              Array.isArray(defaultValues?.visitedCountries)
-                ? defaultValues.visitedCountries.join(", ")
-                : defaultValues?.visitedCountries ?? ""
-            }
-            {...register("visitedCountries" as any)}
-            className="w-full rounded-lg border p-3 focus:outline-none focus:ring-2 focus:ring-orange-300"
-            placeholder="Bangladesh, India"
-          />
-          {errors.visitedCountries && (
-            <p className="text-xs text-red-500 mt-1">{String(errors.visitedCountries.message)}</p>
-          )}
-        </div>
+            {/* Visited Countries */}
+            <FormField
+              control={form.control}
+              name="visitedCountries"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="font-bold flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-primary" /> Visited
+                  </FormLabel>
+                  <FormControl>
+                    <Input placeholder="Bangladesh, India, Nepal" className="h-12 rounded-xl" {...field} />
+                  </FormControl>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Comma separated</p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <button
-            type="button"
-            onClick={() => onCancel?.()}
-            className="px-4 py-2 rounded-md border border-gray-200 text-sm text-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-linear-to-r from-primary to-primary text-white text-sm font-medium hover:from-primary hover:to-primary transition"
-          >
-            {isSubmitting ? "Saving..." : "Save changes"}
-          </button>
-        </div>
-      </form>
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel} 
+              className="rounded-xl h-11 px-6 font-bold"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting} 
+              className="rounded-xl h-11 px-8 font-black shadow-lg shadow-primary/20"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

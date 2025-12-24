@@ -1,14 +1,28 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ITravelPlan } from "@/types/travelPlan.interface";
-import Image from "next/image";
 import ClientPlanActions from "@/components/modules/plan/ClientPlanActions";
 import LoaderWrapper from "@/lib/LoaderWrapper";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  CalendarDays, 
+  MapPin, 
+  Banknote, 
+  ArrowLeft, 
+  ShieldCheck, 
+  Clock, 
+  Globe,
+  Compass,
+  CheckCircle2,
+  Tag,
+  Info
+} from "lucide-react";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
 export default async function PlanDetail({ params }: Props) {
   const { id } = await params;
@@ -21,279 +35,189 @@ export default async function PlanDetail({ params }: Props) {
   if (!res.ok) return notFound();
 
   const j = await res.json();
-  console.log("API response:", j);
-
   const plan: ITravelPlan = j.plan || j.data || j.plans || null;
 
-  if (!plan) return notFound(); 
+  if (!plan) return notFound();
 
   const startDate = plan.startDate ? new Date(plan.startDate) : null;
   const endDate = plan.endDate ? new Date(plan.endDate) : null;
-
   const host = (plan as any).host;
 
+  // Semantic Status Logic
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  let planStatus = "Upcoming";
+  let statusBadgeClass = "bg-secondary text-secondary-foreground border-border";
 
-
-  const normalize = (d: Date | null) => {
-    if (!d) return null;
-    const x = new Date(d);
-    x.setHours(0, 0, 0, 0);
-    return x;
-  };
-
-  const today = normalize(new Date()) || new Date();
-
-  const normStart = normalize(startDate);
-  const normEnd = normalize(endDate);
-
-  let planStatus = "Active";
-  if (normEnd && normEnd < today) {
+  if (endDate && new Date(endDate) < today) {
     planStatus = "Completed";
-  } else if (normStart && normStart <= today) {
+    statusBadgeClass = "bg-muted text-muted-foreground border-border";
+  } else if (startDate && new Date(startDate) <= today) {
     planStatus = "Ongoing";
-  } else {
-    planStatus = "Active";
+    statusBadgeClass = "bg-primary/10 text-primary border-primary/20";
   }
 
-  const statusBadge = {
-    Completed: "bg-gray-100 text-gray-700 border-gray-200",
-    Ongoing: "bg-green-50 text-green-700 border-green-100",
-    Upcoming: "bg-yellow-50 text-yellow-700 border-yellow-100",
-  } as const;
   return (
     <LoaderWrapper>
-    <div className="max-w-4xl mx-auto py-10 px-4">
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        {/* Hero */}
-        <div className="sm:flex">
-          <div className="sm:w-2/5 bg-linear-to-br from-orange-50 to-white p-6 flex items-center justify-center">
-            {/* Placeholder image / illustration */}
-            <div className="w-full h-44 sm:h-56 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-orange-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M3 10c0 5 4 9 9 9s9-4 9-9" />
-                <path strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M12 3v7" />
-              </svg>
-            </div>
+      <div className="min-h-screen bg-muted/20 pb-16">
+        {/* Navigation Bar */}
+        <nav className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b border-border">
+          <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+            <Link href="/travel-plans" className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Plans
+            </Link>
+            <Badge variant="outline" className={`rounded-full px-4 py-0.5 font-bold uppercase text-[10px] ${statusBadgeClass}`}>
+              {planStatus}
+            </Badge>
           </div>
+        </nav>
 
-          <div className="sm:w-3/5 p-6">
-            {/* Title + meta */}
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+        <main className="container mx-auto px-4 mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* Left Content Area */}
+            <div className="lg:col-span-8 space-y-6">
+              <header className="space-y-4">
+                <div className="flex gap-2">
+                  <Badge className="bg-primary text-primary-foreground border-none text-[10px] font-bold px-3 py-0.5 uppercase tracking-wider">
+                    {plan.travelType || "EXPLORATION"}
+                  </Badge>
+                  <Badge variant="secondary" className="text-muted-foreground border-none text-[10px] font-bold px-3 py-0.5">
+                    <Globe className="w-3 h-3 mr-1" /> {(plan as any).visibility || "Public"}
+                  </Badge>
+                </div>
+                
+                <h1 className="text-3xl md:text-6xl font-black text-foreground tracking-tighter leading-tight">
                   {plan.title || plan.destination}
                 </h1>
-                <p className="text-sm text-gray-500 mt-1 max-w-xl">
-                  {plan.description || "No description provided."}
-                </p>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-primary text-xs font-medium border border-orange-100">
-                    {(plan as any).visibility ? String((plan as any).visibility).toLowerCase() : "public"}
-                  </span>
-
-                  {plan.travelType && (
-                    <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium border border-gray-100">
-                      {plan.travelType}
-                    </span>
-                  )}
-
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-gray-600 text-xs font-medium border border-gray-100">
-                    ID: <span className="font-mono text-xs text-gray-700">{plan.id}</span>
-                  </span>
+                <div className="flex items-center gap-2 text-muted-foreground font-semibold bg-background w-fit px-4 py-1.5 rounded-xl border border-border shadow-sm">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  <span className="text-lg tracking-tight">{plan.destination}</span>
                 </div>
+              </header>
+
+              {/* Bento Highlights */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <HighlightCard 
+                  icon={CalendarDays} 
+                  label="Trip Timeline" 
+                  value={`${startDate ? startDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : "—"} - ${endDate ? endDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : "—"}`} 
+                  color="text-primary" 
+                />
+                <HighlightCard 
+                  icon={Banknote} 
+                  label="Budget Range" 
+                  value={`৳${plan.budgetMin} - ৳${plan.budgetMax}`} 
+                  color="text-primary" 
+                />
+                <HighlightCard 
+                  icon={Tag} 
+                  label="Plan Identity" 
+                  value={`#${plan.id.slice(-6).toUpperCase()}`} 
+                  color="text-primary" 
+                />
               </div>
 
-              <div className="text-right">
-                <div className="text-xs text-gray-500 mr-2">Status</div>
-                <div className="mt-1 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 text-xs font-semibold border border-green-100">
-                  {planStatus}
-                </div>
-              </div>
-            </div>
-
-            {/* Dates, budget, actions */}
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-gray-100 p-4 bg-gray-50">
-                <div className="text-xs text-gray-500">Dates</div>
-                <div className="mt-1 text-sm text-gray-800 font-medium">
-                  {startDate ? startDate.toLocaleDateString() : "—"}{" "}
-                  <span className="text-gray-400">–</span>{" "}
-                  {endDate ? endDate.toLocaleDateString() : "—"}
-                </div>
-              </div>
-
-              <div className="rounded-lg border border-gray-100 p-4 bg-gray-50">
-                <div className="text-xs text-gray-500">Budget</div>
-                <div className="mt-1 text-sm text-gray-800 font-medium">
-                  ৳ {plan.budgetMin ?? 0} <span className="text-gray-400">—</span> ৳ {plan.budgetMax ?? 0}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-3">
-              
-
-              <Link href="/travel-plans" className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-white border border-gray-200 text-sm text-gray-700 hover:shadow-sm transition">
-                ← Back to plans
-              </Link>
-            </div>
-          </div>
-        </div>
-
-      
-        <div className="p-6 border-t border-gray-100 bg-white">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">Overview</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            {plan.description || "No further details available for this plan."}
-          </p>
-
-          
-          <div className="mt-6 p-6 rounded-lg border border-gray-100 bg-gray-50">
-            <h4 className="text-md font-semibold text-gray-800 mb-3">Host Information</h4>
-
-            {!host ? (
-              <div className="text-sm text-gray-500">No host information available.</div>
-            ) : (
-              <div className="sm:flex sm:items-start sm:gap-6">
-                
-                <div className="shrink-0">
-                  {host.profileImage ? (
-                    
-                    <Image
-                    width={80}
-                    height={80}
-                    src={host?.profileImage || "https://i.ibb.co.com/jvLMWbX0/image.png"} alt={host.fullName || "Host"} className="h-20 w-20 rounded-full object-cover border border-gray-200" />
-                  ) : (
-                    <div className="h-20 w-20 rounded-full bg-linear-to-br from-orange-300 to-primary flex items-center justify-center text-white text-lg font-semibold border border-orange-200">
-                      {host.fullName ? String(host.fullName).charAt(0).toUpperCase() : "H"}
+              {/* Description Card */}
+              <Card className="rounded-[2rem] border-border bg-card shadow-sm overflow-hidden">
+                <div className="p-6 md:p-12 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <Compass className="w-6 h-6 text-primary" />
                     </div>
-                  )}
+                    <h3 className="text-2xl font-bold text-foreground tracking-tight">The Itinerary</h3>
+                  </div>
+                  
+                  <Separator className="opacity-50" />
+                  
+                  <p className="text-muted-foreground text-lg leading-relaxed whitespace-pre-line italic">
+                    &ldquo;{plan.description || "The host is currently finalizing the finer details of this adventure. Contact them to learn more about the schedule and activities."}&rdquo;
+                  </p>
+
+                  <div className="pt-6 flex flex-wrap items-center justify-between gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] border-t border-border/50">
+                    <div className="flex items-center gap-2"><Clock className="w-4 h-4" /> Posted: {plan.createdAt ? new Date(plan.createdAt).toLocaleDateString() : "—"}</div>
+                    <div className="flex items-center gap-2 font-bold text-primary"><CheckCircle2 className="w-4 h-4" /> Tour Hobe Verified</div>
+                  </div>
                 </div>
+              </Card>
+            </div>
 
-                <div className="mt-3 sm:mt-0 flex-1">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-sm font-semibold text-gray-900">
-                        {host.fullName || host.email}
+            {/* Right Sidebar: Host & Actions */}
+            <div className="lg:col-span-4 space-y-6">
+              <aside className="sticky top-24 space-y-6">
+                <Card className="rounded-[2rem] border-border bg-card shadow-sm overflow-hidden">
+                  {/* Host Card Header */}
+                  <div className="bg-foreground p-6 h-24 flex justify-center relative">
+                    <div className="absolute inset-0 bg-primary/5" />
+                    <Avatar className="h-24 w-24 border-[6px] border-card shadow-xl absolute -bottom-12">
+                      <AvatarImage src={host?.profileImage || ""} />
+                      <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-black italic">
+                        {host?.fullName?.charAt(0) || "H"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+
+                  <CardContent className="pt-16 pb-10 px-8 space-y-8 flex flex-col items-center">
+                    <div className="text-center space-y-1">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <h4 className="text-xl font-black text-foreground tracking-tight">{host?.fullName || "Verified Explorer"}</h4>
+                        {host?.isPremium && <ShieldCheck className="w-5 h-5 text-primary fill-primary/10" />}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">{host.email}</div>
-
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium border border-gray-200">
-                          Role: {host.role}
-                        </span>
-
-                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 text-primary text-xs font-medium border border-orange-100">
-                          Payment: {host.paymentStatus}
-                        </span>
-
-                        {host.isPremium && (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-xs font-medium border border-yellow-100">
-                            Premium ✓
-                          </span>
-                        )}
-
-                        {!host.isPremium && (
-                          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-gray-700 text-xs font-medium border border-gray-100">
-                            Free
-                          </span>
-                        )}
-
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${
-                          host.isPremium ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-gray-50 text-gray-600 border-gray-100"
-                        }`}>
-                          {host.isPremium ? "Verified" : "Not verified"}
-                        </span>
-                      </div>
+                      <Badge variant="outline" className="text-[10px] font-bold text-muted-foreground border-border uppercase tracking-widest">
+                        {host?.isPremium ? "Premium Member" : "Standard Explorer"}
+                      </Badge>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500">Member since</div>
-                      <div className="text-sm text-gray-700 mt-1">
-                        {host.createdAt ? new Date(host.createdAt).toLocaleDateString() : "—"}
-                      </div>
+                    <div className="w-full bg-muted/30 rounded-2xl p-5 border border-border/50 text-center">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5">
+                        <Info className="w-3 h-3" /> Host Bio
+                      </p>
+                      <p className="text-sm text-foreground/80 font-medium leading-relaxed italic">
+                        {host?.bio || "A travel enthusiast ready to explore the hidden gems of Bangladesh with a great team."}
+                      </p>
+                    </div>
 
-                      {host.isPremium && host.premiumExpiresAt && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          Expires: <span className="text-sm text-gray-800">{new Date(host.premiumExpiresAt).toLocaleDateString()}</span>
-                        </div>
+                    <Separator className="opacity-50" />
+
+                    <div className="w-full space-y-4">
+                      {host && (
+                        <ClientPlanActions
+                          planId={plan.id}
+                          hostId={host.id}
+                          planEndDate={endDate?.toISOString() || ""}
+                          planStartDate={startDate ? startDate.toISOString() : null}
+                        />
                       )}
                     </div>
-                  </div>
-
-                  {/* Bio */}
-                  <div className="mt-4 text-sm text-gray-700">
-                    <div className="text-xs text-gray-500">Bio</div>
-                    <div className="mt-1">
-                      {host.bio ? host.bio : <span className="text-gray-500">No bio provided.</span>}
-                    </div>
-                  </div>
-
-                  {/* Optional lists */}
-                  <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm text-gray-700">
-                    <div>
-                      <div className="text-xs text-gray-500">Travel Interests</div>
-                      <div className="mt-1">
-                        {Array.isArray(host.travelInterests) && host.travelInterests.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {host.travelInterests.map((t: string, i: number) => (
-                              <span key={i} className="px-2 py-1 rounded-full bg-gray-100 text-xs text-gray-700 border border-gray-200">{t}</span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="text-xs text-gray-500">Visited Countries</div>
-                      <div className="mt-1">
-                        {Array.isArray(host.visitedCountries) && host.visitedCountries.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {host.visitedCountries.map((c: string, i: number) => (
-                              <span key={i} className="px-2 py-1 rounded-full bg-gray-100 text-xs text-gray-700 border border-gray-200">{c}</span>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-gray-500">—</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* optional fields */}
-          <div className="mt-6 grid sm:grid-cols-2 gap-4">
-            <div>
-              <div className="text-xs text-gray-500">Created At</div>
-              <div className="text-sm text-gray-700 mt-1">
-                {plan.createdAt ? new Date(plan.createdAt).toLocaleString() : "—"}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs text-gray-500">Updated At</div>
-              <div className="text-sm text-gray-700 mt-1">
-                {plan.updatedAt ? new Date(plan.updatedAt).toLocaleString() : "—"}
-              </div>
+                    
+                    <p className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
+                      Member Since {host?.createdAt ? new Date(host.createdAt).getFullYear() : "2025"}
+                    </p>
+                  </CardContent>
+                </Card>
+              </aside>
             </div>
           </div>
-          {host && endDate && (
-            <ClientPlanActions
-              planId={plan.id}
-              hostId={host.id}
-              planEndDate={endDate.toISOString()}
-              planStartDate={startDate ?startDate.toISOString() : null}
-            />
-          )}
-        </div>
+        </main>
       </div>
-    </div>
     </LoaderWrapper>
+  );
+}
+
+/* --- Reusable Mini Component --- */
+function HighlightCard({ icon: Icon, label, value, color }: any) {
+  return (
+    <Card className="flex flex-col gap-3 p-6 bg-card rounded-[1.5rem] border-border shadow-sm hover:shadow-md transition-all">
+      <div className={`p-2 w-fit rounded-lg bg-background border border-border ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+        <p className="text-sm font-black text-foreground">{value}</p>
+      </div>
+    </Card>
   );
 }

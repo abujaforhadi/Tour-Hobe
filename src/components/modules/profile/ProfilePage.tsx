@@ -1,217 +1,243 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
 
 import React, { useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import Swal from "sweetalert2";
-import Image from "next/image";
-import ProfileForm from "./ProfileForm";
-import ChangePasswordForm from "./ChangePasswordForm";
 import { AuthAPI } from "@/lib/api";
 
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardFooter 
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { 
+  MapPin, 
+  CalendarDays, 
+  ShieldCheck, 
+  Globe, 
+  Heart, 
+  Settings, 
+  Lock,
+  UserCircle,Compass
+} from "lucide-react";
+
+import ProfileForm from "./ProfileForm";
+import ChangePasswordForm from "./ChangePasswordForm";
+import Loader from "@/components/shared/Loader";
+
 export default function ProfilePage() {
- 
   const { user, loading, setUser } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-orange-400 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
   const u = user;
 
- 
   async function handleProfileUpdated(updated: any) {
-  
-  if (!updated) return;
-
-  try {
-   
-    const res = await AuthAPI.me();
-    const fresh = res.data?.data || res.data?.user || res.data || null;
-    if (fresh) {
-      setUser(fresh as any); 
-      return;
-    }
-  } catch (err) {
-    console.error("Failed to refresh /me after profile update:", err);
-    
+    if (!updated) return;
     try {
-      const safe = { ...(user || {}) };
-      for (const k of Object.keys(updated)) {
-        const val = (updated as any)[k];
-     
-        if (val === null) {
-          (safe as any)[k] = val;
-        } else if (typeof val === "object") {
-          try {
-            
-            (safe as any)[k] = JSON.parse(JSON.stringify(val));
-          } catch {
-           
-          }
-        } else {
-          (safe as any)[k] = val;
-        }
-      }
-      setUser(safe as any);
-      return;
-    } catch (e) {
-      console.error("Fallback merge failed:", e);
+      const res = await AuthAPI.me();
+      const fresh = res.data?.data || res.data?.user || res.data || null;
+      if (fresh) setUser(fresh as any);
+    } catch (err) {
+      console.error("Refresh failed, merging locally:", err);
+      setUser({ ...u, ...updated });
     }
   }
-}
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="p-6 sm:flex sm:items-start sm:gap-6">
-          <div className="shrink-0">
-            {u?.profileImage ? (
-              <Image
-                src={u.profileImage}
-                alt={u.fullName || u.email}
-                width={112}
-                height={112}
-                className="rounded-full object-cover border border-gray-200"
-              />
-            ) : (
-              <div className="h-28 w-28 rounded-full bg-linear-to-br from-orange-400 to-primary flex items-center justify-center text-white text-2xl font-bold border border-orange-200">
-                {u?.fullName ? String(u.fullName).charAt(0).toUpperCase() : "U"}
-              </div>
-            )}
+    <div className="min-h-screen bg-muted/30 py-12 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Main Profile Card */}
+        <Card className="border-none shadow-2xl shadow-zinc-200/50 rounded-[2.5rem] overflow-hidden bg-background">
+          {/* Header/Cover Section */}
+          <div className="h-32 bg-foreground relative">
+            <div className="absolute inset-0 bg-primary/10 backdrop-blur-3xl" />
           </div>
 
-          <div className="mt-4 sm:mt-0 flex-1">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-extrabold text-gray-900">{u?.fullName || "Unnamed User"}</h2>
-                <p className="text-sm text-gray-500 mt-1">{u?.email}</p>
+          <CardContent className="px-6 md:px-10 pb-10">
+            <div className="relative flex flex-col md:flex-row items-center md:items-end gap-6 -mt-16 mb-8">
+              <Avatar className="h-32 w-32 border-[6px] border-background shadow-xl">
+                <AvatarImage src={u?.profileImage || ""} />
+                <AvatarFallback className="bg-zinc-900 text-primary text-3xl font-black">
+                  {u?.fullName?.charAt(0) || "U"}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 text-center md:text-left space-y-1 pb-2">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <h1 className="text-3xl font-black tracking-tight text-foreground">
+                    {u?.fullName || "Unnamed Traveler"}
+                  </h1>
+                  {u?.isPremium && (
+                    <ShieldCheck className="w-6 h-6 text-primary fill-primary/10" />
+                  )}
+                </div>
+                <p className="text-muted-foreground font-medium">{u?.email}</p>
+              </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium border border-gray-200">
-                    Role: {u?.role ?? "USER"}
-                  </span>
+              <div className="flex flex-wrap justify-center gap-3 pb-2">
+                <Button 
+                  onClick={() => setEditOpen(true)}
+                  className="rounded-xl font-bold px-6 shadow-lg shadow-primary/20"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Edit Profile
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setPwdOpen(true)}
+                  className="rounded-xl font-bold border-border"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Security
+                </Button>
+              </div>
+            </div>
 
-                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${
-                    u?.isPremium ? "bg-yellow-50 text-yellow-700 border-yellow-100" : "bg-gray-50 text-gray-700 border-gray-100"
-                  }`}>
-                    {u?.isPremium ? "Premium" : "Free"}
-                  </span>
+            <Separator className="mb-8 opacity-50" />
 
-                 
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              {/* Left Side: Basic Info */}
+              <div className="lg:col-span-4 space-y-8">
+                <section className="space-y-4">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <UserCircle className="w-4 h-4" /> Logistics
+                  </h3>
+                  <div className="space-y-4">
+                    <InfoItem icon={MapPin} label="Current Location" value={u?.currentLocation} />
+                    <InfoItem icon={CalendarDays} label="Member Since" value={u?.createdAt ? new Date(u.createdAt).toLocaleDateString() : null} />
+                    <InfoItem icon={Globe} label="Account Type" value={u?.isPremium ? "Premium Explorer" : "Standard User"} isBadge />
+                  </div>
+                </section>
+              </div>
+
+              {/* Right Side: Bio & Tags */}
+              <div className="lg:col-span-8 space-y-8">
+                <section className="space-y-3">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <Heart className="w-4 h-4" /> My Story
+                  </h3>
+                  <p className="text-foreground/80 font-medium leading-relaxed italic border-l-4 border-primary/20 pl-4 py-1">
+                    {u?.bio || "This traveler hasn't shared their story yet. Connect with them to learn more about their adventures!"}
+                  </p>
+                </section>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <TagSection icon={Compass} title="Travel Interests" items={u?.travelInterests} />
+                  <TagSection icon={Globe} title="Visited Countries" items={u?.visitedCountries} />
                 </div>
               </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setEditOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-linear-to-r from-primary to-primary text-white text-sm font-medium hover:from-primary hover:to-primary transition"
-                >
-                  Edit profile
-                </button>
-
-                <button
-                  onClick={() => setPwdOpen(true)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-md border border-gray-200 text-sm text-gray-700 hover:shadow-sm transition"
-                >
-                  Change password
-                </button>
-              </div>
             </div>
+          </CardContent>
 
-            <div className="mt-4 grid sm:grid-cols-2 gap-4 text-sm text-gray-700">
-              <div>
-                <div className="text-xs text-gray-500">Current location</div>
-                <div className="mt-1">{u?.currentLocation ?? "—"}</div>
-              </div>
+          <CardFooter className="bg-muted/30 px-10 py-4 flex justify-between items-center">
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+              Tour Hobe! &bull; Unified Travel Identity
+            </p>
+            <p className="text-[10px] font-bold text-muted-foreground">
+              Last Synced: {u?.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : "Just now"}
+            </p>
+          </CardFooter>
+        </Card>
 
-              <div>
-                <div className="text-xs text-gray-500">Member since</div>
-                <div className="mt-1">{u?.createdAt ? new Date(u.createdAt).toLocaleDateString() : "—"}</div>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="text-xs text-gray-500">Bio</div>
-              <div className="mt-1 text-sm text-gray-700">{u?.bio ?? <span className="text-gray-500">No bio provided.</span>}</div>
-            </div>
-
-            <div className="mt-4">
-              <div className="text-xs text-gray-500">Travel interests</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {Array.isArray(u?.travelInterests) && u.travelInterests.length > 0 ? (
-                  u.travelInterests.map((t: string, i: number) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-gray-100 text-xs text-gray-700 border border-gray-200">{t}</span>
-                  ))
-                ) : (
-                  <span className="text-gray-500">—</span>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <div className="text-xs text-gray-500">Visited countries</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {Array.isArray(u?.visitedCountries) && u.visitedCountries.length > 0 ? (
-                  u.visitedCountries.map((c: string, i: number) => (
-                    <span key={i} className="px-2 py-1 rounded-full bg-gray-100 text-xs text-gray-700 border border-gray-200">{c}</span>
-                  ))
-                ) : (
-                  <span className="text-gray-500">—</span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 border-t border-gray-100 bg-white">
-          <div className="text-sm text-gray-500">Last updated: {u?.updatedAt ? new Date(u.updatedAt).toLocaleString() : "—"}</div>
-        </div>
-      </div>
-
-      {/* Modals */}
-      {editOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setEditOpen(false)} />
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="p-6">
+        {/* Edit Profile Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
+            <DialogHeader className="bg-zinc-900 text-white p-8">
+              <DialogTitle className="text-2xl font-black italic tracking-tight">Edit Your Profile</DialogTitle>
+            </DialogHeader>
+            <div className="p-8">
               <ProfileForm
                 defaultValues={u}
                 onSuccess={(updated) => {
-                  handleProfileUpdated(updated); 
+                  handleProfileUpdated(updated);
                   setEditOpen(false);
+                  Swal.fire({ title: "Updated!", text: "Profile details saved.", icon: "success", confirmButtonColor: "#f97316" });
                 }}
                 onCancel={() => setEditOpen(false)}
               />
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        </Dialog>
 
-      {pwdOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setPwdOpen(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="p-6">
+        {/* Password Dialog */}
+        <Dialog open={pwdOpen} onOpenChange={setPwdOpen}>
+          <DialogContent className="max-w-md rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
+            <DialogHeader className="bg-zinc-900 text-white p-8">
+              <DialogTitle className="text-2xl font-black italic tracking-tight">Security Settings</DialogTitle>
+            </DialogHeader>
+            <div className="p-8">
               <ChangePasswordForm
                 userId={u?.id}
                 onSuccess={() => {
-                  Swal.fire("Success", "Password changed", "success");
+                  Swal.fire({ title: "Secured!", text: "Password changed successfully.", icon: "success", confirmButtonColor: "#f97316" });
                   setPwdOpen(false);
                 }}
                 onCancel={() => setPwdOpen(false)}
               />
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        </Dialog>
+
+      </div>
     </div>
+  );
+}
+
+/* --- REUSABLE MINI COMPONENTS --- */
+
+function InfoItem({ icon: Icon, label, value, isBadge }: any) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="p-2 bg-muted rounded-xl">
+        <Icon className="w-4 h-4 text-primary" />
+      </div>
+      <div>
+        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+        {isBadge ? (
+          <Badge variant="outline" className="mt-1 border-primary/20 text-primary font-bold">
+            {value}
+          </Badge>
+        ) : (
+          <p className="text-sm font-bold text-foreground">{value || "Not Set"}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TagSection({ icon: Icon, title, items }: any) {
+  return (
+    <section className="space-y-3">
+      <h3 className="text-[11px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+        <Icon className="w-3.5 h-3.5" /> {title}
+      </h3>
+      <div className="flex flex-wrap gap-2">
+        {Array.isArray(items) && items.length > 0 ? (
+          items.map((item: string, i: number) => (
+            <Badge key={i} variant="secondary" className="rounded-lg bg-zinc-100 text-zinc-800 font-bold border-none px-3 py-1">
+              {item}
+            </Badge>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground font-medium italic">No tags added yet.</p>
+        )}
+      </div>
+    </section>
   );
 }

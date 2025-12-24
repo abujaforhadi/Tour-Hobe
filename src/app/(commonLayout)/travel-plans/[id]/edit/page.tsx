@@ -6,28 +6,50 @@ import { useParams, useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import {
-  updatePlanSchema,
-  UpdatePlanFormType,
+import { 
+  updatePlanSchema, 
+  UpdatePlanFormType 
 } from "@/zod/plan/plan.validator";
 import { API_BASE } from "@/lib/baseApi";
 import UserAuthWrapper from "@/lib/UserAuthWrapper";
 import LoaderWrapper from "@/lib/LoaderWrapper";
 
-
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { 
+  Pencil, 
+  MapPin, 
+  CalendarDays, 
+  Loader2, 
+  Globe, 
+  Users, 
+  Banknote,
+  FileText
+} from "lucide-react";
 
 export default function EditPlanPage() {
   const router = useRouter();
   const params = useParams();
   const planId = params?.id as string;
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<UpdatePlanFormType>({
+  const form = useForm<UpdatePlanFormType>({
     resolver: zodResolver(updatePlanSchema),
     defaultValues: {
       title: "",
@@ -42,6 +64,7 @@ export default function EditPlanPage() {
     },
   });
 
+  const { setValue, handleSubmit, formState: { isSubmitting } } = form;
 
   useEffect(() => {
     if (!planId) return;
@@ -59,7 +82,6 @@ export default function EditPlanPage() {
         }
 
         const p = json.plan;
-
         setValue("title", p.title || "");
         setValue("destination", p.destination);
         setValue("startDate", p.startDate.split("T")[0]);
@@ -74,7 +96,6 @@ export default function EditPlanPage() {
       }
     })();
   }, [planId, setValue]);
-
 
   const onSubmit = async (data: UpdatePlanFormType) => {
     try {
@@ -101,10 +122,14 @@ export default function EditPlanPage() {
         return;
       }
 
-      await Swal.fire("Success", "Travel plan updated", "success");
+      await Swal.fire({
+        title: "Success!",
+        text: "Your travel plan has been updated.",
+        icon: "success",
+        confirmButtonColor: "#f97316",
+      });
       router.refresh();
       router.push(`/user/my-posted-plan`);
-      
     } catch (err) {
       console.error(err);
     }
@@ -113,114 +138,228 @@ export default function EditPlanPage() {
   return (
     <UserAuthWrapper>
       <LoaderWrapper>
-    <div className="max-w-xl mx-auto px-4 py-10">
-      <h1 className="text-xl font-bold mb-4">Edit Travel Plan</h1>
+        <div className="min-h-screen bg-zinc-50/50 py-12 px-4">
+          <div className="max-w-2xl mx-auto space-y-8">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+                <Pencil className="w-6 h-6" />
+              </div>
+              <h1 className="text-3xl font-black tracking-tight text-zinc-900">
+                Edit Your <span className="text-primary italic">Adventure</span>
+              </h1>
+              <p className="text-muted-foreground font-medium">
+                Make changes to your itinerary or budget to attract the right buddies.
+              </p>
+            </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        {/* Title */}
-        <Input label="Title" {...register("title")} error={errors.title?.message} />
+            <Card className="border-none shadow-2xl shadow-zinc-200/50 rounded-[2.5rem] overflow-hidden bg-white">
+              <CardHeader className="bg-zinc-900 text-white p-8">
+                <CardTitle className="text-xl font-bold">Plan Settings</CardTitle>
+                <CardDescription className="text-zinc-400 font-medium">
+                  ID: {planId}
+                </CardDescription>
+              </CardHeader>
 
-        {/* Destination */}
-        <Input
-          label="Destination"
-          {...register("destination")}
-          error={errors.destination?.message}
-        />
+              <CardContent className="p-8">
+                <Form {...form}>
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField<UpdatePlanFormType, "title">
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              Trip Title
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder="Weekend Getaway" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-        {/* Dates */}
-        <div className="flex gap-3">
-          <Input
-            label="Start Date"
-            type="date"
-            {...register("startDate")}
-            error={errors.startDate?.message}
-          />
-          <Input
-            label="End Date"
-            type="date"
-            {...register("endDate")}
-            error={errors.endDate?.message}
-          />
+                      <FormField<UpdatePlanFormType, "destination">
+                        control={form.control}
+                        name="destination"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-primary" /> Destination
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Sajek" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <FormField<UpdatePlanFormType, "startDate">
+                        control={form.control}
+                        name="startDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <CalendarDays className="w-4 h-4 text-primary" /> Start Date
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField<UpdatePlanFormType, "endDate">
+                        control={form.control}
+                        name="endDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <CalendarDays className="w-4 h-4 text-primary" /> End Date
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField<UpdatePlanFormType, "description">
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-primary" /> Description
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Tell us about the plan..." 
+                              className="min-h-[100px] rounded-2xl resize-none" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <FormField<UpdatePlanFormType, "budgetMin">
+                        control={form.control}
+                        name="budgetMin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <Banknote className="w-4 h-4 text-primary" /> Min Budget
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField<UpdatePlanFormType, "budgetMax">
+                        control={form.control}
+                        name="budgetMax"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <Banknote className="w-4 h-4 text-primary" /> Max Budget
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="number" className="h-12 rounded-xl" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <FormField<UpdatePlanFormType, "travelType">
+                        control={form.control}
+                        name="travelType"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <Users className="w-4 h-4 text-primary" /> Travel Type
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-xl">
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {["SOLO", "FAMILY", "FRIENDS", "COUPLE", "GROUP"].map(opt => (
+                                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField<UpdatePlanFormType, "visibility">
+                        control={form.control}
+                        name="visibility"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold text-zinc-700 flex items-center gap-2">
+                              <Globe className="w-4 h-4 text-primary" /> Visibility
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="h-12 rounded-xl">
+                                  <SelectValue placeholder="Select visibility" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {["PUBLIC", "PRIVATE"].map(opt => (
+                                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="pt-6 border-t border-zinc-100 flex flex-col-reverse sm:flex-row gap-4 items-center justify-between">
+                       <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
+                         Tour Hobe! Safe Travel Network
+                       </p>
+                       <Button 
+                         type="submit" 
+                         disabled={isSubmitting}
+                         className="w-full sm:w-auto h-14 px-10 rounded-2xl font-black shadow-xl shadow-primary/20"
+                       >
+                         {isSubmitting ? (
+                           <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                         ) : (
+                           "Update Plan"
+                         )}
+                       </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-sm">Description</label>
-          <textarea
-            {...register("description")}
-            rows={3}
-            className="w-full border rounded px-2 py-2"
-          />
-          {errors.description && (
-            <p className="text-xs text-red-500">{errors.description.message}</p>
-          )}
-        </div>
-
-        {/* Budget */}
-        <div className="flex gap-3">
-          <Input
-            label="Min Budget"
-            type="number"
-            {...register("budgetMin")}
-            error={errors.budgetMin?.message}
-          />
-          <Input
-            label="Max Budget"
-            type="number"
-            {...register("budgetMax")}
-            error={errors.budgetMax?.message}
-          />
-        </div>
-
-        {/* Selects */}
-        <Select
-          label="Travel Type"
-          {...register("travelType")}
-          options={["SOLO", "FAMILY", "FRIENDS", "COUPLE", "GROUP"]}
-        />
-
-        <Select
-          label="Visibility"
-          {...register("visibility")}
-          options={["PUBLIC", "PRIVATE"]}
-        />
-
-        <button
-          disabled={isSubmitting}
-          className="w-full py-2 rounded bg-primary text-white hover:bg-primary"
-        >
-          {isSubmitting ? "Saving..." : "Save Changes"}
-        </button>
-      </form>
-    </div>
-    </LoaderWrapper>
+      </LoaderWrapper>
     </UserAuthWrapper>
-  );
-}
-
-
-
-function Input({ label, error, ...props }: any) {
-  return (
-    <div className="flex-1">
-      <label className="text-sm">{label}</label>
-      <input {...props} className="w-full px-2 py-2 border rounded" />
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
-  );
-}
-
-function Select({ label, options, ...props }: any) {
-  return (
-    <div>
-      <label className="text-sm">{label}</label>
-      <select {...props} className="w-full px-2 py-2 border rounded">
-        {options.map((o: string) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
-      </select>
-    </div>
   );
 }
