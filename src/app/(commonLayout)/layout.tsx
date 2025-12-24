@@ -17,7 +17,6 @@ export default function PublicLayout({
     <> 
     
     <AuthProvider>
-      <Navbar />
      
       <main className="min-h-dvh">{children}</main>
       
