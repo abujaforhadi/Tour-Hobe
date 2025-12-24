@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import useAuth from "@/hooks/useAuth";
 import Loader from "../Loader";
 
@@ -10,7 +10,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -18,15 +17,15 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const router = useRouter();
   const { user, logout, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   if (loading) return <Loader />;
 
   const isActive = (path: string) =>
-    pathname === path ? "text-primary border-b-2 border-primary" : "text-muted-foreground";
+    pathname === path ? "text-primary font-semibold" : "text-muted-foreground";
 
   const handleLogout = () => {
     logout();
@@ -34,8 +33,8 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-background">
-      <div className="container mx-auto h-16 px-4 flex items-center justify-between">
+    <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
 
         {/* Logo */}
         <Link href="/" className="text-lg font-semibold">
@@ -44,23 +43,23 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-6">
-          <Link href="/" className={`pb-1 text-sm font-medium ${isActive("/")}`}>
+          <Link href="/" className={isActive("/")}>
             Home
           </Link>
 
-          <Link href="/explore" className={`pb-1 text-sm font-medium ${isActive("/explore")}`}>
+          <Link href="/explore" className={isActive("/explore")}>
             Explore
           </Link>
 
-          <Link href="/travel-plans" className={`pb-1 text-sm font-medium ${isActive("/travel-plans")}`}>
+          <Link href="/travel-plans" className={isActive("/travel-plans")}>
             All Plans
           </Link>
 
-          <Link href="/about" className={`pb-1 text-sm font-medium ${isActive("/about")}`}>
+          <Link href="/about" className={isActive("/about")}>
             About
           </Link>
 
-          <Link href="/faq" className={`pb-1 text-sm font-medium ${isActive("/faq")}`}>
+          <Link href="/faq" className={isActive("/faq")}>
             FAQ
           </Link>
         </div>
@@ -73,20 +72,22 @@ export default function Navbar() {
                 <button className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {user.name?.charAt(0) ?? "U"}
+                      {user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium hidden sm:block">
-                    {user.name ?? "User"}
+                  <span className="hidden sm:block text-sm">
+                    {user.email}
                   </span>
                 </button>
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>
-                  <div className="text-xs text-muted-foreground">Signed in as</div>
-                  <div className="truncate font-medium">{user.email}</div>
-                </DropdownMenuLabel>
+                <div className="px-3 py-2 text-xs text-muted-foreground">
+                  Signed in as
+                  <div className="truncate font-medium text-foreground">
+                    {user.email}
+                  </div>
+                </div>
 
                 <DropdownMenuSeparator />
 
@@ -100,7 +101,7 @@ export default function Navbar() {
 
                 {user.role === "ADMIN" && (
                   <DropdownMenuItem onClick={() => router.push("/admin")}>
-                    Admin Panel
+                    Admin
                   </DropdownMenuItem>
                 )}
 
@@ -115,17 +116,21 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="text-sm font-medium">
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
                 Login
               </Link>
+
               <Link
                 href="/register"
-                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
               >
                 Register
               </Link>
-            </div>
+            </>
           )}
         </div>
       </div>
