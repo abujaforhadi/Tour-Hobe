@@ -1,18 +1,22 @@
-
 import PlanCard from "@/components/modules/plan/PlanCard";
 import { API_BASE } from "@/lib/baseApi";
 import LoaderWrapper from "@/lib/LoaderWrapper";
 import { ITravelPlan, PlanPageProps } from "@/types/travelPlan.interface";
 import Link from "next/link";
-
-
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Plus, 
+  ChevronLeft, 
+  ChevronRight, 
+  Map as MapIcon, 
+  LayoutGrid
+} from "lucide-react";
 
 export default async function PlansPage({ searchParams }: PlanPageProps) {
-
   const params = await searchParams;
-
   const page = Number(params.page || 1);
-  const limit = 8;
+  const limit = 9;
 
   const query = new URLSearchParams({
     page: String(page),
@@ -27,106 +31,120 @@ export default async function PlansPage({ searchParams }: PlanPageProps) {
   );
 
   const json = await res.json();
-
   const plans: ITravelPlan[] = json.data || [];
   const meta = json.meta;
 
   return (
     <LoaderWrapper>
-      <div className="container mx-auto min-h-screen px-4 md:px-8 py-6">
+      <div className="min-h-screen bg-zinc-50/50 pb-20">
+        {/* Hero Header Section */}
+        <div className="bg-white border-b mb-10">
+          <div className="container mx-auto px-6 py-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 rounded-full px-3 py-1 font-bold tracking-tight">
+                    COMMUNITY FEED
+                  </Badge>
+                </div>
+                <h1 className="text-4xl font-black tracking-tight text-zinc-900 lg:text-5xl">
+                  Shared <span className="text-primary italic">Journeys</span>
+                </h1>
+                <p className="text-muted-foreground font-medium text-lg max-w-xl">
+                  Browse public itineraries created by the community. Join an existing plan or find inspiration for your next trip.
+                </p>
+              </div>
 
-        
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">
-              All Travel Plans
+              <Button size="lg" className="h-14 px-8 rounded-2xl font-black text-md shadow-xl shadow-primary/20 group" asChild>
+                <Link href="/travel-plans/add">
+                  <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
+                  Post Your Plan
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <main className="container mx-auto px-6">
+          {/* Section Indicator */}
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-2 bg-white rounded-xl border shadow-sm">
+              <LayoutGrid className="w-5 h-5 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold tracking-tight text-zinc-800 uppercase tracking-widest text-sm">
+              Latest Itineraries
             </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Explore your saved trips and upcoming adventures.
-            </p>
+            <div className="h-px flex-1 bg-zinc-200" />
+            {meta && (
+               <p className="text-xs font-bold text-zinc-400">Total {meta.total} Plans</p>
+            )}
           </div>
 
-          <Link
-  href="/travel-plans/add"
-  className="
-    inline-flex items-center justify-center gap-2
-    px-4 py-2 sm:px-5 sm:py-2.5
-    rounded-lg
-    bg-primary text-white
-    font-medium text-sm sm:text-base
-    
-    transition-all duration-200
-    hover:bg-primary hover:shadow-lg
-    active:scale-95
-    focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2
-  "
->
-  <span className="text-lg leading-none">＋</span>
-  <span className="whitespace-nowrap">Add Plan</span>
-</Link>
+          {/* Empty State */}
+          {plans.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border border-dashed border-zinc-200 text-center">
+              <div className="w-20 h-20 rounded-full bg-zinc-50 flex items-center justify-center mb-6">
+                <MapIcon className="w-10 h-10 text-zinc-200" />
+              </div>
+              <h3 className="text-2xl font-black text-zinc-900">No trips found</h3>
+              <p className="text-muted-foreground font-medium mt-2 max-w-xs mx-auto">
+                The map is empty right now. Be the first one to pin an adventure!
+              </p>
+              <Button variant="outline" className="mt-8 rounded-full h-12 px-8 font-bold" asChild>
+                 <Link href="/travel-plans/add">Create Initial Plan</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr">
+              {plans.map((plan) => (
+                <PlanCard key={plan.id} plan={plan} />
+              ))}
+            </div>
+          )}
 
-        </div>
+          {/* Pagination UI */}
+          {meta?.totalPages > 1 && (
+            <div className="mt-20 flex flex-col items-center gap-6">
+              <div className="flex items-center gap-2 p-1.5 bg-white border rounded-2xl shadow-sm">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  disabled={page === 1}
+                  className="rounded-xl h-12 w-12 hover:bg-primary hover:text-white disabled:opacity-30 transition-all"
+                  asChild
+                >
+                  <Link href={`?page=${page - 1}`}>
+                    <ChevronLeft className="w-5 h-5" />
+                  </Link>
+                </Button>
 
-  
-        
+                <div className="px-6 py-2 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center gap-2">
+                   <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">Page</span>
+                   <span className="text-sm font-bold text-primary">{page}</span>
+                   <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">of</span>
+                   <span className="text-sm font-bold text-zinc-900">{meta.totalPages}</span>
+                </div>
 
-
-        {plans.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">
-            No travel plans found.
-          </p>
-        )}
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          {plans.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} />
-          ))}
-        </div>
-
-     
-        {meta?.totalPages > 1 && (
-  <div className="flex items-center justify-center gap-4 mt-10">
-    
-  
-    <Link
-      href={`?page=${page - 1}`}
-      aria-disabled={page === 1}
-      className={`px-4 py-2 rounded-lg border font-medium transition
-        ${
-          page === 1
-            ? "pointer-events-none bg-gray-100 text-gray-400 border-gray-200"
-            : "bg-primary text-white border-primary hover:bg-primary"
-        }
-      `}
-    >
-      ← Previous
-    </Link>
-
-   
-    <span className="text-sm font-medium text-gray-600">
-      Page <span className="font-semibold">{meta.page}</span> of{" "}
-      <span className="font-semibold">{meta.totalPages}</span>
-    </span>
-
-  
-    <Link
-      href={`?page=${page + 1}`}
-      aria-disabled={page === meta.totalPages}
-      className={`px-4 py-2 rounded-lg border font-medium transition
-        ${
-          page === meta.totalPages
-            ? "pointer-events-none bg-gray-100 text-gray-400 border-gray-200"
-            : "bg-primary text-white border-primary hover:bg-primary"
-        }
-      `}
-    >
-      Next →
-    </Link>
-  </div>
-)}
-
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  disabled={page === meta.totalPages}
+                  className="rounded-xl h-12 w-12 hover:bg-primary hover:text-white disabled:opacity-30 transition-all"
+                  asChild
+                >
+                  <Link href={`?page=${page + 1}`}>
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </div>
+              
+              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">
+                {meta.total} adventure leads found across Bangladesh
+              </p>
+            </div>
+          )}
+        </main>
       </div>
     </LoaderWrapper>
   );
 }
-

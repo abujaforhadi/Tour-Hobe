@@ -1,212 +1,252 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createPlanSchema, PlanFormType } from "@/zod/plan/plan.validator";
-import ShareInput from "../InputHandler/ShareInput";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 export default function PlanForm({
   defaultValues,
   onSubmit,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   defaultValues?: any;
   onSubmit: (d: PlanFormType) => Promise<void>;
 }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<PlanFormType>({
+  const form = useForm<PlanFormType>({
     resolver: zodResolver(createPlanSchema),
-    defaultValues,
+    // Fix: Provide explicit empty strings to prevent "uncontrolled to controlled" error
+    defaultValues: {
+      title: "",
+      destination: "",
+      startDate: "",
+      endDate: "",
+      description: "",
+      travelType: "SOLO",
+      visibility: "PUBLIC",
+      budgetMin: "", // Use empty string initially
+      budgetMax: "", // Use empty string initially
+      ...defaultValues,
+    },
   });
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="space-y-6 bg-white rounded-2xl shadow-lg border border-gray-100 p-6"
-    >
-      
-      
-<div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-  <div>
-    <h3 className="text-xl font-bold bg-linear-to-r from-primary to-primary text-transparent bg-clip-text">
-      Create Plan
-    </h3>
-    <p className="text-sm text-gray-500 mt-1">
-      Add plan details and configure dates, budget and visibility.
-    </p>
-  </div>
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6 bg-white p-6"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter plan title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="destination"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Destination</FormLabel>
+                <FormControl>
+                  <Input placeholder="Where to?" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-  
-</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="startDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Start Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="endDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>End Date</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-
-  
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ShareInput
-          label="Title"
-          register={register("title")}
-          error={errors.title?.message as any}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Short description about this plan..."
+                  className="resize-none"
+                  rows={4}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        <ShareInput
-          label="Destination"
-          register={register("destination")}
-          error={errors.destination?.message as any}
-        />
-      </div>
 
-    
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">Start Date</label>
-          <input
-            {...register("startDate")}
-            type="date"
-            className={`w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-              errors.startDate ? "border-red-300" : "border-gray-200"
-            }`}
+        <div className="grid lg:grid-cols-2 grid-cols-1 gap-4">
+          <FormField
+            control={form.control}
+            name="travelType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Travel Type (Optional)</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || "SOLO"} // Controlled value
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="SOLO">Solo</SelectItem>
+                    <SelectItem value="FAMILY">Family</SelectItem>
+                    <SelectItem value="FRIENDS">Friends</SelectItem>
+                    <SelectItem value="COUPLE">Couple</SelectItem>
+                    <SelectItem value="GROUP">Group</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.startDate && (
-            <p className="text-xs text-red-500 mt-1">{errors.startDate?.message as any}</p>
-          )}
+
+          <FormField
+            control={form.control}
+            name="visibility"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Visibility (Optional)</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value || "PUBLIC"} // Controlled value
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select visibility" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="PUBLIC">Public</SelectItem>
+                    <SelectItem value="PRIVATE">Private</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">End Date</label>
-          <input
-            {...register("endDate")}
-            type="date"
-            className={`w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-              errors.endDate ? "border-red-300" : "border-gray-200"
-            }`}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="budgetMin"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Budget Min (BDT)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    // Fix: If your Zod schema expects a string, remove the Number() cast.
+                    // If Zod expects a number, use z.coerce.number() in your schema instead.
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.endDate && (
-            <p className="text-xs text-red-500 mt-1">{errors.endDate?.message as any}</p>
-          )}
-        </div>
-      </div>
-
-     
-      <div className="grid grid-cols-1 gap-4">
-     
-        
-
-        
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">Description (Optional)</label>
-          <textarea
-            {...register("description")}
-            rows={4}
-            className={`w-full rounded-lg border p-3 resize-none placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-              errors.description ? "border-red-300" : "border-gray-200"
-            }`}
-            placeholder="Short description about this plan..."
+          <FormField
+            control={form.control}
+            name="budgetMax"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Budget Max (BDT)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.description && (
-            <p className="text-xs text-red-500 mt-1">{errors.description?.message as any}</p>
-          )}
         </div>
-      </div>
-        <div className="grid lg:grid-cols-2  grid-cols-1 gap-4">
-          <div>
-          <label className="block text-sm text-gray-600 mb-2">Travel Type (Optional)</label>
-          <select
-            {...register("travelType")}
-            className="rounded-lg border border-gray-200 p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-300"
+
+        <div className="flex items-center justify-between gap-4 pt-4">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">Tip:</span> Keep dates
+            and budget realistic.
+          </p>
+
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting}
+            className="min-w-[120px]"
           >
-            <option value="SOLO">Solo</option>
-            <option value="FAMILY">Family</option>
-            <option value="FRIENDS">Friends</option>
-            <option value="COUPLE">Couple</option>
-            <option value="GROUP">Group</option>
-          </select>
-
-          {errors.travelType && (
-            <p className="text-xs text-red-500 mt-1">{errors.travelType?.message as any}</p>
-          )}
+            {form.formState.isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Plan"
+            )}
+          </Button>
         </div>
-
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">Visibility (Optional)</label>
-
-          <select
-            {...register("visibility")}
-            className="rounded-lg border border-gray-200 p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-300"
-          >
-            <option value="PUBLIC">Public</option>
-            <option value="PRIVATE">Private</option>
-          </select>
-
-          {errors.visibility && (
-            <p className="text-xs text-red-500 mt-1">{errors.visibility?.message as any}</p>
-          )}
-        </div>
-        </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">Budget Min (BDT)</label>
-          <input
-            {...register("budgetMin")}
-            type="number"
-            className={`w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-              errors.budgetMin ? "border-red-300" : "border-gray-200"
-            }`}
-            placeholder="0"
-          
-          />
-          {errors.budgetMin && (
-            <p className="text-xs text-red-500 mt-1">{errors.budgetMin?.message as any}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm text-gray-600 mb-2">Budget Max (BDT)</label>
-          <input
-            {...register("budgetMax")}
-            type="number"
-            className={`w-full rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-orange-300 ${
-              errors.budgetMax ? "border-red-300" : "border-gray-200"
-            }`}
-            placeholder="0"
-          
-          />
-          {errors.budgetMax && (
-            <p className="text-xs text-red-500 mt-1">{errors.budgetMax?.message as any}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm text-gray-500">
-          <span className="font-medium text-gray-700">Tip:</span> Keep dates and budget realistic.
-        </div>
-
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`inline-flex items-center gap-3 rounded-md px-4 py-2 text-white font-medium transition ${
-            isSubmitting
-              ? "bg-orange-400 cursor-wait"
-              : "bg-linear-to-r from-primary to-primary hover:from-primary hover:to-primary"
-          }`}
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <circle cx="12" cy="12" r="10" strokeWidth="3" className="opacity-20"></circle>
-                <path d="M22 12a10 10 0 00-10-10" strokeWidth="3" className="opacity-100"></path>
-              </svg>
-              <span>Saving...</span>
-            </>
-          ) : (
-            <span>Save Plan</span>
-          )}
-        </button>
-      </div>
-    </form>
+      </form>
+    </Form>
   );
 }
