@@ -210,7 +210,6 @@ export default function UserPaymentsPage() {
   );
 }
 
-/* --- HELPER COMPONENT --- */
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "PAID") {

@@ -91,7 +91,7 @@ export default function Navbar() {
 
                 <DropdownMenuSeparator />
 
-                <DropdownMenuItem onClick={() => router.push("/user")}>
+                <DropdownMenuItem onClick={() => router.push("/user/dashboard")}>
                   Dashboard
                 </DropdownMenuItem>
 
