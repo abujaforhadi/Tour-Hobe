@@ -1,15 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
 
-import { PlansAPI } from "@/lib/api";
-import { ITravelPlan } from "@/types/travelPlan.interface";
 import React, { useEffect, useState, useCallback } from "react";
 import Swal from "sweetalert2";
+import { PlansAPI } from "@/lib/api";
+import { ITravelPlan } from "@/types/travelPlan.interface";
 
 import PlanTable from "./PlanTable";
 import PlanFormAdmin from "./PlanFormAdmin";
 import Loader from "@/components/shared/Loader";
+
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Map, 
+  RefreshCw, 
+  ChevronLeft, 
+  ChevronRight, 
+  Compass, 
+  Plus,
+  BarChart3,
+  CalendarCheck
+} from "lucide-react";
 
 export default function PlanManagementPage() {
   const [plans, setPlans] = useState<ITravelPlan[]>([]);
@@ -18,7 +37,6 @@ export default function PlanManagementPage() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [editingPlan, setEditingPlan] = useState<ITravelPlan | null>(null);
 
- 
   const [page, setPage] = useState(1);
   const [limit] = useState(8);
   const [meta, setMeta] = useState<any>(null);
@@ -26,21 +44,15 @@ export default function PlanManagementPage() {
   const fetchPlans = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
       const res = await PlansAPI.list({ page, limit });
-
-    
       const data = res.data?.data ?? res.data?.plans ?? [];
       const metaInfo = res.data?.meta ?? null;
 
       setPlans(Array.isArray(data) ? data : []);
       setMeta(metaInfo);
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err?.response?.data?.message || err?.message || "Failed to load plans"
-      );
+      setError(err?.response?.data?.message || err?.message || "Failed to load plans");
     } finally {
       setLoading(false);
     }
@@ -53,40 +65,25 @@ export default function PlanManagementPage() {
   const handleDelete = useCallback(
     async (plan: ITravelPlan) => {
       const result = await Swal.fire({
-        title: "Delete plan?",
-        text: `Are you sure you want to delete "${plan.title || plan.destination}"?`,
+        title: "Delete this plan?",
+        text: `Are you sure you want to remove the journey to "${plan.title || plan.destination}"?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Yes, delete",
-        cancelButtonText: "Cancel",
-        confirmButtonColor: "#fb923c",
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#18181b",
+        customClass: { popup: 'rounded-[2rem]' }
       });
 
       if (!result.isConfirmed) return;
 
       try {
         setActionLoadingId(plan.id);
-
         setPlans(prev => prev.filter(p => p.id !== plan.id));
-        const res = await PlansAPI.remove(plan.id);
-
-        await Swal.fire({
-          icon: "success",
-          title: "Deleted",
-          text: res.data?.message || "Plan deleted successfully",
-          confirmButtonColor: "#fb923c",
-        });
+        await PlansAPI.remove(plan.id);
+        Swal.fire({ title: "Removed", text: "Travel plan deleted.", icon: "success", confirmButtonColor: "#f97316" });
       } catch (err: any) {
-        console.error(err);
-        await Swal.fire({
-          icon: "error",
-          title: "Failed",
-          text:
-            err?.response?.data?.message ||
-            err?.message ||
-            "Failed to delete plan",
-          confirmButtonColor: "#fb923c",
-        });
+        Swal.fire({ title: "Error", text: "Failed to delete plan.", icon: "error" });
         fetchPlans();
       } finally {
         setActionLoadingId(null);
@@ -96,91 +93,68 @@ export default function PlanManagementPage() {
   );
 
   const handleViewDetails = useCallback(async (plan: ITravelPlan) => {
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    const formatDate = (iso: string) =>
+      new Date(iso).toLocaleDateString("en-BD", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
 
-  const html = `
-    <div class="text-left text-sm text-gray-700 space-y-4">
+    const html = `
+      <div class="text-left space-y-5 p-2">
+        <div class="pb-4 border-b">
+          <h3 class="text-xl font-black text-zinc-900 tracking-tight">${plan.title || plan.destination}</h3>
+          <p class="text-xs font-bold text-primary uppercase tracking-widest mt-1">
+            ${formatDate(plan.startDate)} — ${formatDate(plan.endDate)}
+          </p>
+        </div>
 
-      <!-- Header -->
-      <div class="pb-3 border-b">
-        <h3 class="text-lg font-semibold text-gray-800">
-          ${plan.title || plan.destination}
-        </h3>
-        <p class="text-xs text-gray-500">
-          ${formatDate(plan.startDate)} → ${formatDate(plan.endDate)}
-        </p>
-      </div>
-
-      <!-- Info Grid -->
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <p class="text-xs text-gray-500">Destination</p>
-          <p class="font-medium">${plan.destination}</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-zinc-50 p-3 rounded-xl border border-zinc-100">
+            <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Travel Type</p>
+            <p class="text-sm font-bold text-zinc-900">${plan.travelType}</p>
+          </div>
+          <div class="bg-zinc-50 p-3 rounded-xl border border-zinc-100">
+            <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Budget Range</p>
+            <p class="text-sm font-bold text-zinc-900">৳${plan.budgetMin ?? 0} - ৳${plan.budgetMax ?? 0}</p>
+          </div>
         </div>
 
         <div>
-          <p class="text-xs text-gray-500">Travel Type</p>
-          <p class="font-medium">${plan.travelType}</p>
+          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Host Identity</p>
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary">
+               ${plan.host?.fullName?.charAt(0) || "H"}
+            </div>
+            <div>
+              <p class="text-sm font-bold text-zinc-900">${plan.host?.fullName || "Verified User"}</p>
+              <p class="text-[11px] text-zinc-500 font-medium">${plan.host?.email || "-"}</p>
+            </div>
+          </div>
         </div>
 
         <div>
-          <p class="text-xs text-gray-500">Visibility</p>
-          <span class="inline-block px-2 py-1 rounded-full text-xs font-medium ${
-            plan.visibility === "PUBLIC"
-              ? "bg-orange-100 text-primary"
-              : "bg-gray-100 text-gray-700"
-          }">
-            ${plan.visibility}
-          </span>
-        </div>
-
-        <div>
-          <p class="text-xs text-gray-500">Budget</p>
-          <p class="font-medium">
-            ${plan.budgetMin ?? "-"} – ${plan.budgetMax ?? "-"}
+          <p class="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Journey Overview</p>
+          <p class="text-sm text-zinc-600 leading-relaxed italic">
+            &ldquo;${plan.description || "The host hasn't provided a detailed description yet."}&rdquo;
           </p>
         </div>
       </div>
+    `;
 
-      <!-- Host -->
-      <div class="pt-3 border-t">
-        <p class="text-xs text-gray-500">Host</p>
-        <p class="font-medium">
-          ${plan.host?.fullName || "-"}
-        </p>
-        <p class="text-xs text-gray-500">
-          ${plan.host?.email || "-"}
-        </p>
-      </div>
-
-      <!-- Description -->
-      <div class="pt-3 border-t">
-        <p class="text-xs text-gray-500 mb-1">Description</p>
-        <p class="leading-relaxed">
-          ${plan.description || "-"}
-        </p>
-      </div>
-
-    </div>
-  `;
-
-  await Swal.fire({
-    title: "Plan Details",
-    html,
-    width: 640,
-    confirmButtonColor: "#fb923c",
-    confirmButtonText: "Close",
-  });
-}, []);
-
+    await Swal.fire({
+      title: "",
+      html,
+      width: 600,
+      confirmButtonColor: "#f97316",
+      confirmButtonText: "Close Registry",
+      customClass: { popup: 'rounded-[2.5rem] p-6' }
+    });
+  }, []);
 
   const handleEditClick = useCallback((plan: ITravelPlan) => {
     setEditingPlan(plan);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleUpdateSaved = (updated: ITravelPlan) => {
@@ -191,27 +165,47 @@ export default function PlanManagementPage() {
   if (loading) return <Loader />;
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="container mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">
-              Plan Management
+    <div className="min-h-screen bg-muted/30 py-10 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-zinc-900 rounded-lg">
+                <Map className="w-5 h-5 text-primary" />
+              </div>
+              <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 uppercase tracking-widest font-bold">
+                Trip Logistics
+              </Badge>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              Plan <span className="text-primary italic underline decoration-primary/20 underline-offset-8">Management</span>
             </h1>
-            <p className="text-sm text-gray-500">
-              Manage all travel plans — view details, edit, or delete.
+            <p className="text-muted-foreground font-medium">
+              Oversee all community itineraries and active travel groups.
             </p>
           </div>
-          <button
-            onClick={fetchPlans}
-            className="bg-orange-400 hover:bg-primary text-white px-3 py-2 rounded-md text-sm shadow"
+          <Button 
+            onClick={fetchPlans} 
+            variant="outline" 
+            className="rounded-xl font-bold bg-background shadow-sm hover:bg-muted"
           >
-            Refresh
-          </button>
-        </header>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Data
+          </Button>
+        </div>
 
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+           <ManagementStat label="Total Plans" value={meta?.total || plans.length} icon={Compass} />
+           <ManagementStat label="Upcoming Tours" value={plans.length} icon={CalendarCheck} />
+           <ManagementStat label="System Health" value="Active" icon={BarChart3} />
+        </div>
+
+        {/* Edit Form Overlay */}
         {editingPlan && (
-          <div className="mb-6">
+          <div className="animate-in fade-in slide-in-from-top-4 duration-500">
             <PlanFormAdmin
               plan={editingPlan}
               onCancel={() => setEditingPlan(null)}
@@ -220,69 +214,72 @@ export default function PlanManagementPage() {
           </div>
         )}
 
-        <PlanTable
-          plans={plans}
-          loading={loading}
-          error={error}
-          actionLoadingId={actionLoadingId}
-          onView={handleViewDetails}
-          onEdit={handleEditClick}
-          onDelete={handleDelete}
-        />
+        {/* Table Section */}
+        <Card className="border-none shadow-2xl shadow-zinc-200/50 rounded-[2.5rem] overflow-hidden bg-background">
+          <CardHeader className="bg-zinc-900 text-white p-8">
+             <CardTitle className="text-xl font-bold flex items-center gap-2">
+               Global Travel Registry
+             </CardTitle>
+             <CardDescription className="text-zinc-400 font-medium">
+               Authorized listing of all Public and Private travel plans.
+             </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <PlanTable
+              plans={plans}
+              loading={loading}
+              error={error}
+              actionLoadingId={actionLoadingId}
+              onView={handleViewDetails}
+              onEdit={handleEditClick}
+              onDelete={handleDelete}
+            />
+          </CardContent>
+        </Card>
 
-        {/* ✅ PAGINATION UI */}
+        {/* Pagination Section */}
         {meta?.totalPages > 1 && (
-  <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              variant="outline"
+              className="rounded-xl h-11 px-6 font-bold border-border shadow-sm"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" /> Previous
+            </Button>
 
-    {/* Previous */}
-    <button
-      disabled={page <= 1}
-      onClick={() => setPage(p => p - 1)}
-      className={`
-        inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        border font-medium text-sm
-        transition-all duration-200
-        ${
-          page <= 1
-            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-            : "bg-primary text-white border-primary hover:bg-primary active:scale-95"
-        }
-      `}
-    >
-      ← Previous
-    </button>
+            <div className="flex items-center bg-background border border-border px-6 h-11 rounded-xl font-black text-sm text-foreground shadow-sm">
+              Page {meta.page} <span className="text-muted-foreground mx-2">of</span> {meta.totalPages}
+            </div>
 
-    {/* Page Info */}
-    <span className="text-sm font-medium text-gray-600">
-      Page <span className="font-semibold">{meta.page}</span> of{" "}
-      <span className="font-semibold">{meta.totalPages}</span>
-    </span>
-
-    {/* Next */}
-    <button
-      disabled={page >= meta.totalPages}
-      onClick={() => setPage(p => p + 1)}
-      className={`
-        inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        border font-medium text-sm
-        transition-all duration-200
-        ${
-          page >= meta.totalPages
-            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-            : "bg-primary text-white border-primary hover:bg-primary active:scale-95"
-        }
-      `}
-    >
-      Next →
-    </button>
-
-  </div>
-)}
-
+            <Button
+              disabled={page >= meta.totalPages}
+              onClick={() => setPage(p => p + 1)}
+              variant="outline"
+              className="rounded-xl h-11 px-6 font-bold border-border shadow-sm"
+            >
+              Next <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
+function ManagementStat({ label, value, icon: Icon }: any) {
+  return (
+    <Card className="rounded-[1.5rem] border-border bg-background shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6 flex items-center gap-4">
+        <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center">
+          <Icon className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+          <p className="text-2xl font-black text-foreground tracking-tight">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

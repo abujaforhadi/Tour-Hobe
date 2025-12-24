@@ -49,7 +49,6 @@ export default function AuthWrapper({ children }: { children: ReactNode }) {
       }
     }
   }, [user, loading, router]);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 via-orange-50 to-gray-100 dark:from-gray-900 dark:via-[#0b1020] dark:to-gray-900">

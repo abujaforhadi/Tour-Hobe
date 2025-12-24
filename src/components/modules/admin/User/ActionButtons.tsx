@@ -1,29 +1,65 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
 import { Props } from "@/types";
+import { Button } from "@/components/ui/button";
+import { 
+  Loader2, 
+  ShieldCheck, 
+  ShieldAlert, 
+  Trash2, 
+  UserCog 
+} from "lucide-react";
 
-
-
-export default function ActionButtons({ userId, userName, role, actionLoading, onDelete, onChangeRole }: Props) {
+export default function ActionButtons({ 
+  userId, 
+  userName, 
+  role, 
+  actionLoading, 
+  onDelete, 
+  onChangeRole 
+}: Props) {
   const busy = actionLoading === userId;
 
   return (
-    <>
-      <button
-        onClick={() => onChangeRole(userId, role , userName)}
+    <div className="flex items-center gap-2">
+      {/* Role Toggle Button */}
+      <Button
+        variant="outline"
+        size="sm"
         disabled={busy}
-        className="px-3 py-1 rounded-md text-sm border border-gray-200 hover:bg-gray-50"
-        title="Change Role"
+        onClick={() => onChangeRole(userId, role, userName)}
+        className="h-9 rounded-xl font-bold border-border hover:bg-muted transition-all flex items-center gap-2"
+        title={role === "ADMIN" ? "Demote to User" : "Promote to Admin"}
       >
-        {busy ? "..." : role === "ADMIN" ? "Demote" : "Promote"}
-      </button>
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : role === "ADMIN" ? (
+          <ShieldAlert className="h-3.5 w-3.5 text-amber-500" />
+        ) : (
+          <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+        )}
+        <span className="hidden sm:inline">
+          {role === "ADMIN" ? "Demote" : "Promote"}
+        </span>
+      </Button>
 
-      <button
-        onClick={() => onDelete(userId, userName)}
+      {/* Delete Button */}
+      <Button
+        variant="ghost"
+        size="sm"
         disabled={busy}
-        className="px-3 py-1 rounded-md text-sm bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
-        title="Delete user"
+        onClick={() => onDelete(userId, userName)}
+        className="h-9 rounded-xl font-bold text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-2"
+        title="Remove User"
       >
-        {busy ? "..." : "Delete"}
-      </button>
-    </>
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Trash2 className="h-3.5 w-3.5" />
+        )}
+        <span className="hidden sm:inline">Delete</span>
+      </Button>
+    </div>
   );
 }

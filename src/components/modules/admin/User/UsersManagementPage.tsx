@@ -1,17 +1,30 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { UserAPI } from "@/lib/api";
-import { IUser } from "@/types/user.interface";
 import React, { useEffect, useState, useCallback } from "react";
 import Swal from "sweetalert2";
-
-import UsersTable from "./UsersTable";
+import { UserAPI } from "@/lib/api";
+import { IUser } from "@/types/user.interface";
 import Loader from "@/components/shared/Loader";
+import UsersTable from "./UsersTable";
 
-
-const MySwal = (Swal);
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Users, 
+  RefreshCw, 
+  ChevronLeft, 
+  ChevronRight, 
+  UserCog, 
+  ShieldCheck 
+} from "lucide-react";
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<IUser[]>([]);
@@ -19,29 +32,22 @@ export default function UserManagementPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-const [limit] = useState(8);
-const [meta, setMeta] = useState<any>(null);
+  const [limit] = useState(8);
+  const [meta, setMeta] = useState<any>(null);
 
- const fetchUsers = useCallback(async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const res = await UserAPI.listUsers({ page, limit });
-
-    setUsers(res.data?.users ?? []);
-    setMeta(res.data?.meta ?? null);
-  } catch (err: any) {
-    console.error("fetchUsers:", err);
-    setError(
-      err?.response?.data?.message ||
-        err?.message ||
-        "Failed to fetch users"
-    );
-  } finally {
-    setLoading(false);
-  }
-}, [page, limit]);
-
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await UserAPI.listUsers({ page, limit });
+      setUsers(res.data?.users ?? []);
+      setMeta(res.data?.meta ?? null);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || "Failed to fetch users");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit]);
 
   useEffect(() => {
     fetchUsers();
@@ -49,60 +55,26 @@ const [meta, setMeta] = useState<any>(null);
 
   const handleDelete = useCallback(
     async (userId: string, userName?: string) => {
-      const confirmed = await MySwal.fire({
-        title: `Delete user?`,
-        text: `Delete ${userName ?? "this user"} — this cannot be undone.`,
+      const confirmed = await Swal.fire({
+        title: `Delete explorer?`,
+        text: `Are you sure you want to remove ${userName || "this user"}? This action is permanent.`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Yes, delete",
-        cancelButtonText: "Cancel",
-        confirmButtonColor: "#fb923c",
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#18181b",
+        customClass: { popup: 'rounded-[2rem]' }
       });
 
       if (!confirmed.isConfirmed) return;
 
       try {
         setActionLoading(userId);
-        
-        const prev = users;
-        setUsers(prevUsers => prevUsers.filter(u => u.id !== userId));
-
-        const res = await UserAPI.deleteUser(userId);
-        await MySwal.fire({ title: "Deleted", text: res.data?.message ?? "User deleted", icon: "success", confirmButtonColor: "#fb923c" });
+        await UserAPI.deleteUser(userId);
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        Swal.fire({ title: "Removed", text: "User has been deleted.", icon: "success", confirmButtonColor: "#f97316" });
       } catch (err: any) {
-        console.error("delete error", err);
-        await MySwal.fire({ title: "Failed", text: err?.response?.data?.message || err?.message || "Delete failed", icon: "error", confirmButtonColor: "#fb923c" });
-        fetchUsers(); 
-      } finally {
-        setActionLoading(null);
-      }
-    },
-    [users, fetchUsers]
-  );
-
-  const handleChangeRole = useCallback(
-    async (userId: string, currentRole: string, userName?: string) => {
-      const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
-      const confirmed = await MySwal.fire({
-        title: "Change role?",
-        text: `Change ${userName ?? "this user"} role from ${currentRole} to ${newRole}?`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: `Yes, set ${newRole}`,
-        cancelButtonText: "Cancel",
-        confirmButtonColor: "#fb923c",
-      });
-      if (!confirmed.isConfirmed) return;
-
-      try {
-        setActionLoading(userId);
-        
-        setUsers(prev => prev.map(u => (u.id === userId ? { ...u, role: newRole } : u)));
-        const res = await UserAPI.changeRole(userId, newRole as "USER" | "ADMIN");
-        await MySwal.fire({ title: "Updated", text: res.data?.message ?? "Role updated", icon: "success", confirmButtonColor: "#fb923c" });
-      } catch (err: any) {
-        console.error("changeRole", err);
-        await MySwal.fire({ title: "Failed", text: err?.response?.data?.message || err?.message || "Change role failed", icon: "error", confirmButtonColor: "#fb923c" });
+        Swal.fire({ title: "Error", text: "Could not delete user.", icon: "error" });
         fetchUsers();
       } finally {
         setActionLoading(null);
@@ -110,85 +82,145 @@ const [meta, setMeta] = useState<any>(null);
     },
     [fetchUsers]
   );
-  if (loading) {
-    return (
-      <Loader/>
-    );
-  }
+
+  const handleChangeRole = useCallback(
+    async (userId: string, currentRole: string, userName?: string) => {
+      const newRole = currentRole === "ADMIN" ? "USER" : "ADMIN";
+      const confirmed = await Swal.fire({
+        title: "Change Permissions?",
+        text: `Promote/Demote ${userName || "user"} to ${newRole}?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: `Yes, set as ${newRole}`,
+        confirmButtonColor: "#f97316",
+        customClass: { popup: 'rounded-[2rem]' }
+      });
+
+      if (!confirmed.isConfirmed) return;
+
+      try {
+        setActionLoading(userId);
+        setUsers(prev => prev.map(u => (u.id === userId ? { ...u, role: newRole } : u)));
+        await UserAPI.changeRole(userId, newRole as "USER" | "ADMIN");
+        Swal.fire({ title: "Updated", text: "User role changed successfully.", icon: "success", confirmButtonColor: "#f97316" });
+      } catch (err: any) {
+        Swal.fire({ title: "Failed", text: "Action could not be completed.", icon: "error" });
+        fetchUsers();
+      } finally {
+        setActionLoading(null);
+      }
+    },
+    [fetchUsers]
+  );
+
+  if (loading) return <Loader />;
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="container mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-800">User Management</h1>
-            <p className="text-sm text-gray-500">View users, change roles, or delete accounts.</p>
+    <div className="min-h-screen bg-muted/30 py-10 px-4 md:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-zinc-900 rounded-lg">
+                <UserCog className="w-5 h-5 text-primary" />
+              </div>
+              <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 uppercase tracking-widest font-bold">
+                Admin Control
+              </Badge>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground">
+              User <span className="text-primary italic underline decoration-primary/20 underline-offset-8">Management</span>
+            </h1>
+            <p className="text-muted-foreground font-medium">
+              Monitor, verify, and manage the Tour Hobe community members.
+            </p>
           </div>
-          <div className="flex gap-2">
-            <button onClick={fetchUsers} className="bg-orange-400 hover:bg-primary text-white px-3 py-2 rounded-md text-sm shadow">Refresh</button>
+          <Button 
+            onClick={fetchUsers} 
+            variant="outline" 
+            className="rounded-xl font-bold bg-background shadow-sm border-border hover:bg-muted"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh List
+          </Button>
+        </div>
+
+        {/* User Stats Summary (Optional/New) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+           <StatCard label="Total Users" value={meta?.total || users.length} icon={Users} />
+           <StatCard label="Active Admins" value={users.filter(u => u.role === "ADMIN").length} icon={ShieldCheck} />
+           <StatCard label="Current Page" value={page} icon={RefreshCw} />
+        </div>
+
+        {/* Table Section */}
+        <Card className="border-none shadow-2xl shadow-zinc-200/50 rounded-[2.5rem] overflow-hidden bg-background">
+          <CardHeader className="bg-zinc-900 text-white p-8">
+             <CardTitle className="text-xl font-bold flex items-center gap-2">
+               Explorer Registry
+             </CardTitle>
+             <CardDescription className="text-zinc-400 font-medium">
+               Current count: {meta?.total ?? users.length} registered users
+             </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <UsersTable
+              users={users}
+              loading={loading}
+              error={error}
+              onDelete={handleDelete}
+              onChangeRole={handleChangeRole}
+              actionLoading={actionLoading}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Pagination Section */}
+        {meta?.totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-4">
+            <Button
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              variant="outline"
+              className="rounded-xl h-11 px-6 font-bold border-border shadow-sm"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" /> Previous
+            </Button>
+
+            <div className="flex items-center bg-background border border-border px-6 h-11 rounded-xl font-black text-sm text-foreground shadow-sm">
+              Page {meta.page} <span className="text-muted-foreground mx-2">of</span> {meta.totalPages}
+            </div>
+
+            <Button
+              disabled={page >= meta.totalPages}
+              onClick={() => setPage(p => p + 1)}
+              variant="outline"
+              className="rounded-xl h-11 px-6 font-bold border-border shadow-sm"
+            >
+              Next <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
-        </header>
-
-        <UsersTable
-          users={users}
-          loading={loading}
-          error={error}
-          onDelete={handleDelete}
-          onChangeRole={handleChangeRole}
-          actionLoading={actionLoading}
-        />
-       {meta?.totalPages > 1 && (
-  <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-    
-    {/* Previous */}
-    <button
-      disabled={page <= 1}
-      onClick={() => setPage(p => p - 1)}
-      className={`
-        inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        border text-sm font-medium
-        transition-all duration-200
-        ${
-          page <= 1
-            ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
-            : "bg-primary text-white border-gray-300 hover:bg-orange-50 hover:border-orange-300 hover:text-primary"
-        }
-      `}
-    >
-      ← Previous
-    </button>
-
-    {/* Page Info */}
-    <span className="text-sm font-medium text-gray-600">
-      Page <span className="font-semibold">{meta.page}</span> of{" "}
-      <span className="font-semibold">{meta.totalPages}</span>
-    </span>
-
-    {/* Next */}
-    <button
-      disabled={page >= meta.totalPages}
-      onClick={() => setPage(p => p + 1)}
-      className={`
-        inline-flex items-center gap-2
-        px-4 py-2 rounded-lg
-        border text-sm font-medium
-        transition-all duration-200
-        ${
-          page >= meta.totalPages
-            ? "cursor-not-allowed bg-gray-100 text-gray-400 border-gray-200"
-            : "bg-primary text-white border-gray-300 hover:bg-orange-50 hover:border-orange-300 hover:text-primary"
-        }
-      `}
-    >
-      Next →
-    </button>
-
-  </div>
-)}
-
-
+        )}
       </div>
     </div>
+  );
+}
+
+/* --- Reusable Stats Component --- */
+
+function StatCard({ label, value, icon: Icon }: { label: string, value: string | number, icon: any }) {
+  return (
+    <Card className="rounded-[1.5rem] border-border bg-background shadow-sm">
+      <CardContent className="p-6 flex items-center gap-4">
+        <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center">
+          <Icon className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{label}</p>
+          <p className="text-2xl font-black text-foreground">{value}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
