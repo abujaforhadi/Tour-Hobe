@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Swal from "sweetalert2";
-import { Loader2, LogIn, Mail, Lock } from "lucide-react";
+import { Loader2, LogIn, Mail, Lock, UserCircle2, ShieldCheck } from "lucide-react";
 
 import useAuth from "@/hooks/useAuth";
 import { loginSchema, LoginType } from "@/zod/auth/auth.validator";
@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -37,7 +38,19 @@ export default function LoginForm() {
     },
   });
 
-  const { isSubmitting } = form.formState;
+  const { isSubmitting, errors } = form.formState;
+  const { setValue } = form;
+
+  // Quick Login Handlers
+  const handleQuickLogin = (role: "user" | "admin") => {
+    if (role === "admin") {
+      setValue("email", "admin@gmail.com");
+      setValue("password", "Admin@123");
+    } else {
+      setValue("email", "Jhadi321@hadi.com");
+      setValue("password", "Jhadi321@hadi.com");
+    }
+  };
 
   async function onSubmit(data: LoginType) {
     try {
@@ -56,17 +69,14 @@ export default function LoginForm() {
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 bg-muted/30">
       <Card className="w-full max-w-md border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-background">
-        <CardHeader className="space-y-4 pt-10 pb-6 text-center bg-foreground text-background relative">
-           {/* Decorative background element */}
+        <CardHeader className="space-y-4 pt-10 pb-6 text-center bg-zinc-900 text-white relative">
            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-           
            <div className="flex justify-center">
             <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <LogIn className="h-7 w-7 text-white" />
             </div>
            </div>
-           
-           <div className="space-y-1">
+           <div className="space-y-1 relative z-10">
             <CardTitle className="text-3xl font-black italic tracking-tighter">Tour Hobe!</CardTitle>
             <CardDescription className="text-zinc-400 font-medium">
               Welcome back explorer. Sign in to your account.
@@ -140,20 +150,49 @@ export default function LoginForm() {
                 </Link>
               </div>
 
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full h-14 rounded-2xl text-md font-black shadow-xl shadow-primary/10 transition-transform active:scale-95"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
+              <div className="space-y-4">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full h-14 rounded-2xl text-md font-black shadow-xl shadow-primary/10 transition-transform active:scale-95"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </Button>
+
+                {/* Quick Login Section */}
+                <div className="p-4 bg-muted/50 rounded-2xl border border-dashed border-border space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-center text-muted-foreground">
+                    Quick Login For Testing
+                  </p>
+                  <div className="flex gap-2">
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => handleQuickLogin("user")}
+                      className="flex-1 h-10 rounded-xl bg-background text-[11px] font-bold border-border hover:bg-muted"
+                    >
+                      <UserCircle2 className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                      Demo User
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      onClick={() => handleQuickLogin("admin")}
+                      className="flex-1 h-10 rounded-xl bg-background text-[11px] font-bold border-border hover:bg-muted"
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                      Demo Admin
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </form>
           </Form>
 

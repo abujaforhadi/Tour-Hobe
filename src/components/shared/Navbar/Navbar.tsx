@@ -37,7 +37,7 @@ export default function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
 
         {/* Logo */}
-        <Link href="/" className="text-lg font-semibold">
+        <Link href="/" className="text-2xl font-bold">
           Tour<span className="text-primary">Hobe</span>
         </Link>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users,
   Layers,
@@ -13,11 +14,18 @@ import {
   ChevronRight,
   Menu,
   Sparkles,
-  ActivitySquare
+  MessageSquare,
+  ShieldCheck,
+  X,
+  LayoutDashboard
 } from 'lucide-react';
 
 import Swal from 'sweetalert2';
 import useAuth from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -25,177 +33,199 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setIsCollapsed(true);
-      } else {
-        setIsCollapsed(false);
-        setIsMobileOpen(false);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const navigation = [
-    { name: 'Users', href: '/admin/user-management', icon: Users },
-    { name: 'Plans', href: '/admin/plan-management', icon: Layers },
-    { name: 'All Transactions', href: '/admin/transaction-history', icon: Activity },
-    { name: 'All Reviews', href: '/admin/all-reviews', icon: ActivitySquare },
-    { name: 'Home', href: '/', icon: Home },
+  // Optimized Navigation Groups for Admin
+  const menuGroups = [
+    {
+      group: "Overview",
+      items: [
+        { name: ' Home', href: '/', icon: LayoutDashboard },
+      ]
+    },
+    {
+      group: "Management",
+      items: [
+        { name: 'User Registry', href: '/admin/user-management', icon: Users },
+        { name: 'Global Plans', href: '/admin/plan-management', icon: Layers },
+      ]
+    },
+    {
+      group: "Monitoring",
+      items: [
+        { name: 'Transactions', href: '/admin/transaction-history', icon: Activity },
+        { name: 'Review Feed', href: '/admin/all-reviews', icon: MessageSquare },
+      ]
+    }
   ];
 
-  const isActiveRoute = (href: string) => {
-    if (href === '/') return pathname === '/';
-    if (href === '/admin') return pathname === '/admin';
-    return pathname?.startsWith(href);
-  };
+  const isActive = (href: string) => pathname?.startsWith(href);
 
   const handleLogout = async () => {
     const result = await Swal.fire({
-      title: 'Logout?',
-      text: 'Are you sure you want to logout?',
-      icon: 'question',
+      title: 'End Session?',
+      text: 'Are you sure you want to log out of the admin panel?',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#EA580C', // orange-500
-      cancelButtonColor: '#6B7280',
-      confirmButtonText: 'Yes, logout!',
-      cancelButtonText: 'Cancel',
-      background: '#ffffff',
-      color: '#1F2937',
+      confirmButtonColor: '#f97316',
+      cancelButtonColor: '#18181b',
+      confirmButtonText: 'Yes, Logout',
       customClass: {
-        popup: 'rounded-2xl shadow-2xl',
-        confirmButton: 'bg-gradient-to-r from-primary to-primary text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all duration-300',
-        cancelButton: 'bg-gray-200 text-gray-700 font-semibold py-2 px-6 rounded-xl hover:bg-gray-300 transition-all duration-300'
+        popup: 'rounded-[2rem] border-none shadow-2xl',
+        confirmButton: 'rounded-xl font-bold px-6 py-3',
+        cancelButton: 'rounded-xl font-bold px-6 py-3'
       }
     });
 
     if (result.isConfirmed) {
       await logout();
-
-      await Swal.fire({
-        title: 'Logged Out!',
-        text: 'You have been successfully logged out.',
-        icon: 'success',
-        confirmButtonColor: '#EA580C',
-        background: '#ffffff',
-        color: '#1F2937',
-        customClass: {
-          popup: 'rounded-2xl shadow-2xl',
-          confirmButton: 'bg-gradient-to-r from-primary to-primary text-white font-semibold py-2 px-6 rounded-xl hover:shadow-lg transition-all duration-300'
-        }
-      });
       window.location.href = '/login';
     }
   };
 
   return (
     <>
-   
-      <button
+      {/* Mobile Toggle Button */}
+      <Button
+        variant="outline"
+        size="icon"
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-gray-900 p-2 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700"
-        aria-label="Open menu"
+        className="md:hidden fixed top-4 left-4 z-50 rounded-xl bg-white shadow-xl border-zinc-200"
       >
-        <Menu size={20} className="text-primary" />
-      </button>
+        {isMobileOpen ? <X size={20} /> : <Menu size={20} className="text-primary" />}
+      </Button>
 
-   
-      <aside
-        className={`bg-white dark:bg-gray-900/95 backdrop-blur-sm border-r border-gray-200 dark:border-gray-800 shadow-2xl transition-all duration-300 flex flex-col
-          ${isCollapsed ? 'w-20' : 'w-64'}
-          fixed md:sticky top-0 left-0 h-screen z-40
-          ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          transform`}
-        aria-label="Main sidebar"
+      {/* Sidebar Container */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 85 : 280 }}
+        className={`fixed md:sticky top-0 left-0 h-screen z-40 bg-white border-r border-zinc-100 flex flex-col transition-all duration-300 md:translate-x-0 ${
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
-    
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+        {/* Branding Header */}
+        <div className="p-6 mb-2">
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isCollapsed && (
-             
-                
-                <span className="text-base font-extrabold bg-linear-to-r from-primary to-gray-700 bg-clip-text text-transparent leading-tight">
-                  Admin Dashboard
-                </span>
-             
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2"
+              >
+                <div className="bg-zinc-900 p-2 rounded-xl shadow-lg shadow-zinc-200">
+                  <Sparkles className="text-primary w-5 h-5" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-black tracking-tighter text-zinc-900 italic leading-none">
+                    Tour <span className="text-primary">Hobe</span>
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Admin</span>
+                </div>
+              </motion.div>
             )}
-
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors duration-200"
-              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden md:flex rounded-full hover:bg-zinc-50 h-8 w-8"
             >
-              {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            </button>
+              {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </Button>
           </div>
         </div>
 
-     
-        <nav className="flex-1 p-4 overflow-y-auto">
-          <ul className="space-y-2">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = isActiveRoute(item.href);
+        {/* Navigation Content */}
+        <ScrollArea className="flex-1 px-4">
+          <div className="space-y-8 pt-2 pb-6">
+            {menuGroups.map((group, idx) => (
+              <div key={idx} className="space-y-3">
+                {!isCollapsed && (
+                  <h3 className="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300">
+                    {group.group}
+                  </h3>
+                )}
+                <ul className="space-y-1">
+                  {group.items.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <li key={item.name}>
+                        <Link
+                          href={item.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          className={`relative flex items-center gap-3 p-3 rounded-2xl transition-all group ${
+                            active 
+                              ? 'bg-zinc-900 text-white shadow-xl shadow-zinc-200' 
+                              : 'text-zinc-500 hover:bg-zinc-50 hover:text-primary'
+                          }`}
+                        >
+                          <item.icon size={20} className={active ? 'text-primary' : 'group-hover:text-primary transition-colors'} />
+                          {!isCollapsed && (
+                            <span className="text-sm font-bold tracking-tight">{item.name}</span>
+                          )}
+                          {active && !isCollapsed && (
+                            <motion.div
+                              layoutId="admin-active-pill"
+                              className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary"
+                            />
+                          )}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
 
-              return (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setIsMobileOpen(false)}
-                    className={`flex items-center gap-3 w-full p-3 rounded-xl transition-all duration-200 group
-                      ${isActive
-                        ? 'bg-linear-to-r from-orange-50 to-gray-50 dark:from-orange-900/10 dark:to-gray-800/10 text-primary shadow'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-primary'
-                      }`}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <Icon
-                      size={20}
-                      className={isActive ? 'text-primary' : 'text-gray-400 group-hover:text-primary'}
-                    />
-                    {!isCollapsed && <span className="font-semibold text-sm">{item.name}</span>}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-
-       
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-          <div className={`flex items-center gap-3 p-3 rounded-xl ${isCollapsed ? 'justify-center' : ''} bg-gray-50 dark:bg-gray-800/50 mb-4`}>
-            <div className="w-9 h-9 rounded-full bg-linear-to-br from-primary to-gray-700 flex items-center justify-center">
-              <span className="text-white text-sm font-semibold">
-                {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-              </span>
-            </div>
+        {/* Admin Profile & Logout Section */}
+        <div className="p-4 mt-auto border-t border-zinc-100 bg-zinc-50/50">
+          <div className={`flex items-center gap-3 p-3 rounded-2xl bg-white border border-zinc-200/50 shadow-sm ${isCollapsed ? 'justify-center' : ''}`}>
+            <Avatar className="h-9 w-9 border-2 border-primary/20">
+              <AvatarImage src={user?.profileImage || '/default-profile.png'} />
+              <AvatarFallback className="bg-zinc-900 text-primary font-black text-xs">
+                {user?.fullName?.charAt(0).toUpperCase() || 'A'}
+              </AvatarFallback>
+            </Avatar>
 
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {user?.fullName || 'User'}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {user?.email}
+                <div className="flex items-center gap-1">
+                  <p className="text-xs font-black text-zinc-900 truncate tracking-tight">
+                    {user?.fullName || 'Administrator'}
+                  </p>
+                  <ShieldCheck className="w-3 h-3 text-primary" />
+                </div>
+                <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-tighter truncate">
+                  Master Access
                 </p>
               </div>
             )}
           </div>
 
-          <div className="space-y-2">
-            <button
-              onClick={handleLogout}
-              className={`flex items-center gap-3 w-full p-3 rounded-xl text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
-            >
-              <LogOut size={18} className="text-red-600" />
-              {!isCollapsed && <span className="font-medium">Logout</span>}
-            </button>
-          </div>
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            className={`mt-4 w-full flex items-center gap-3 rounded-xl text-zinc-400 hover:bg-red-50 hover:text-red-600 font-bold text-sm transition-all ${
+              isCollapsed ? 'justify-center' : 'justify-start px-4'
+            }`}
+          >
+            <LogOut size={18} />
+            {!isCollapsed && <span>End Session</span>}
+          </Button>
         </div>
-      </aside>
+      </motion.aside>
+
+      {/* Mobile Glass Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-zinc-900/60 backdrop-blur-md z-30 md:hidden"
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }
