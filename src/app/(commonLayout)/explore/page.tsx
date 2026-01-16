@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import useAuth from "@/hooks/useAuth";
-import Loader from "@/components/shared/Loader";
 import { API_BASE } from "@/lib/baseApi";
 import { MatchPlanCommon } from "@/types/explore.interface";
+import { TravelCardSkeleton } from "@/components/modules/travelPlans/TravelCardSkeleton";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { 
   Search, 
   MapPin, 
@@ -30,7 +29,8 @@ import {
   CheckCircle2, 
   ArrowRight,
   Compass,
-  Plane
+  Plane,
+  Loader2
 } from "lucide-react";
 
 export default function ExplorePage() {
@@ -79,11 +79,8 @@ export default function ExplorePage() {
     }
   }
 
-  if (loading && !initialLoaded) return <Loader />;
-
   return (
     <div className="min-h-screen bg-zinc-50/50 pb-20">
-      {/* Hero Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-6 py-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -105,7 +102,6 @@ export default function ExplorePage() {
       </div>
 
       <main className="container mx-auto px-6 -mt-10 space-y-10">
-        {/* Search Section */}
         <section>
           <Card className="border-none shadow-2xl shadow-zinc-200/50 rounded-[2.5rem] overflow-hidden">
             <CardContent className="p-4 lg:p-8">
@@ -155,7 +151,7 @@ export default function ExplorePage() {
 
                 <Button size="lg" className="h-12 rounded-xl font-bold tracking-tight shadow-lg shadow-primary/20" disabled={loading}>
                   {loading ? (
-                    <span className="flex items-center gap-2">Finding...</span>
+                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Finding...</span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <Search className="w-4 h-4" /> Search Buddies
@@ -167,7 +163,6 @@ export default function ExplorePage() {
           </Card>
         </section>
 
-        {/* Results Section */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -178,12 +173,20 @@ export default function ExplorePage() {
                 Matched Itineraries
               </h2>
             </div>
-            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
-              {matches.length} Travelers Found
-            </p>
+            {!loading && (
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+                {matches.length} Travelers Found
+              </p>
+            )}
           </div>
 
-          {matches.length === 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <TravelCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : matches.length === 0 ? (
             <Card className="border-dashed bg-zinc-50/50 py-24 rounded-[3.5rem] border-2">
               <CardContent className="flex flex-col items-center text-center space-y-6">
                 <div className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center">
@@ -218,8 +221,6 @@ export default function ExplorePage() {
     </div>
   );
 }
-
-/* ------------------ REFINED CARD ------------------ */
 
 function MatchCard({ plan }: { plan: MatchPlanCommon }) {
   const formatDate = (date?: string) => 

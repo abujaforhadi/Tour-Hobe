@@ -12,11 +12,13 @@ import {
   Map as MapIcon, 
   LayoutGrid
 } from "lucide-react";
+import { TravelCardGridSkeleton } from "@/components/modules/travelPlans/TravelCardSkeleton";
+import { Suspense } from "react";
 
 export default async function PlansPage({ searchParams }: PlanPageProps) {
   const params = await searchParams;
   const page = Number(params.page || 1);
-  const limit = 9;
+  const limit = 8; 
 
   const query = new URLSearchParams({
     page: String(page),
@@ -31,13 +33,13 @@ export default async function PlansPage({ searchParams }: PlanPageProps) {
   );
 
   const json = await res.json();
+
   const plans: ITravelPlan[] = json.data || [];
   const meta = json.meta;
 
   return (
     <LoaderWrapper>
       <div className="min-h-screen bg-zinc-50/50 pb-20">
-        {/* Hero Header Section */}
         <div className="bg-white border-b mb-10">
           <div className="container mx-auto px-6 py-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -66,7 +68,6 @@ export default async function PlansPage({ searchParams }: PlanPageProps) {
         </div>
 
         <main className="container mx-auto px-6">
-          {/* Section Indicator */}
           <div className="flex items-center gap-4 mb-8">
             <div className="p-2 bg-white rounded-xl border shadow-sm">
               <LayoutGrid className="w-5 h-5 text-primary" />
@@ -80,7 +81,6 @@ export default async function PlansPage({ searchParams }: PlanPageProps) {
             )}
           </div>
 
-          {/* Empty State */}
           {plans.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border border-dashed border-zinc-200 text-center">
               <div className="w-20 h-20 rounded-full bg-zinc-50 flex items-center justify-center mb-6">
@@ -95,14 +95,15 @@ export default async function PlansPage({ searchParams }: PlanPageProps) {
               </Button>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 auto-rows-fr">
-              {plans.map((plan) => (
-                <PlanCard key={plan.id} plan={plan} />
-              ))}
-            </div>
+            <Suspense fallback={<TravelCardGridSkeleton />}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-fr">
+                {plans.map((plan) => (
+                  <PlanCard key={plan.id} plan={plan} />
+                ))}
+              </div>
+            </Suspense>
           )}
 
-          {/* Pagination UI */}
           {meta?.totalPages > 1 && (
             <div className="mt-20 flex flex-col items-center gap-6">
               <div className="flex items-center gap-2 p-1.5 bg-white border rounded-2xl shadow-sm">
