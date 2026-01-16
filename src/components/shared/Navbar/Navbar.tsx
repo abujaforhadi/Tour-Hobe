@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import useAuth from "@/hooks/useAuth";
 import Loader from "../Loader";
+import { Menu } from "lucide-react"; // Icon for hamburger menu
 
 import {
   DropdownMenu,
@@ -14,13 +15,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // Mobile menu state
+
+  // Close mobile menu when a link is clicked
+  const handleMobileLinkClick = (path: string) => {
+    setIsOpen(false);
+    router.push(path);
+  };
 
   if (loading) return <Loader />;
 
@@ -29,53 +45,104 @@ export default function Navbar() {
 
   const handleLogout = () => {
     logout();
+    setIsOpen(false);
     router.push("/");
   };
+
+  // Define navigation items to map through them (DRY principle)
+  const navItems = [
+    { name: "Home", path: "/" },
+    { name: "Explore", path: "/explore" },
+    { name: "All Plans", path: "/travel-plans" },
+    { name: "About", path: "/about" },
+    { name: "FAQ", path: "/faq" },
+  ];
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        
+        {/* Left Side: Logo & Mobile Menu Trigger */}
+        <div className="flex items-center gap-4">
+          {/* Mobile Menu Trigger */}
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+              <SheetHeader>
+                <SheetTitle className="text-left text-2xl font-bold">
+                  Tour<span className="text-primary">Hobe</span>
+                </SheetTitle>
+              </SheetHeader>
+              
+              <div className="flex flex-col gap-6 py-6">
+                {/* Mobile Nav Links */}
+                <div className="flex flex-col gap-4">
+                  {navItems.map((item) => (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={`text-lg ${isActive(item.path)}`}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
 
-        {/* Logo */}
-        <Link href="/" className="text-2xl font-bold">
-          Tour<span className="text-primary">Hobe</span>
-        </Link>
+                {/* Mobile Auth Buttons (Only if not logged in) */}
+                {!user && (
+                  <div className="flex flex-col gap-3 mt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleMobileLinkClick("/login")}
+                      className="w-full"
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      onClick={() => handleMobileLinkClick("/register")}
+                      className="w-full"
+                    >
+                      Register
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-6">
-          <Link href="/" className={isActive("/")}>
-            Home
-          </Link>
-
-          <Link href="/explore" className={isActive("/explore")}>
-            Explore
-          </Link>
-
-          <Link href="/travel-plans" className={isActive("/travel-plans")}>
-            All Plans
-          </Link>
-
-          <Link href="/about" className={isActive("/about")}>
-            About
-          </Link>
-
-          <Link href="/faq" className={isActive("/faq")}>
-            FAQ
+          {/* Logo */}
+          <Link href="/" className="text-2xl font-bold">
+            Tour<span className="text-primary">Hobe</span>
           </Link>
         </div>
 
-        {/* Right Side */}
+        {/* Desktop Nav (Hidden on Mobile) */}
+        <div className="hidden md:flex items-center gap-6">
+          {navItems.map((item) => (
+            <Link key={item.path} href={item.path} className={isActive(item.path)}>
+              {item.name}
+            </Link>
+          ))}
+        </div>
+
+        {/* Right Side: Auth (Avatar or Desktop Login Buttons) */}
         <div className="flex items-center gap-4">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted">
+                <button className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted outline-none focus:ring-2 ring-primary/20">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary">
                       {user.email?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:block text-sm">
+                  <span className="hidden sm:block text-sm font-medium">
                     {user.email}
                   </span>
                 </button>
@@ -116,21 +183,21 @@ export default function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
+            // Desktop Login Buttons (Hidden on mobile to save space)
+            <div className="hidden md:flex items-center gap-4">
               <Link
                 href="/login"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground"
               >
                 Login
               </Link>
-
               <Link
                 href="/register"
-                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
               >
                 Register
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>
